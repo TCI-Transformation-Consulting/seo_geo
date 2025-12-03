@@ -4,7 +4,7 @@ import type React from "react"
 import { useState } from "react"
 import type { ViewState, ClientProject, PackagePresetId } from "../types"
 import { PACKAGE_PRESETS, ANALYSIS_TYPES, GENERATION_TYPES } from "../constants"
-import { initialScan, getContentChunks, postNapAudit, scanBatch, postCompetitorSearch, postTopicRecognition, postContentGap, runComprehensiveAnalysis } from "../services/api"
+import { initialScan, getContentChunks, scanBatch, postCompetitorSearch, runComprehensiveAnalysis, runAIVisibilityAnalysis } from "../services/api"
 import {
   Search,
   Loader2,
