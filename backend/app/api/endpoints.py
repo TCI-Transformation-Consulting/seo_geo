@@ -587,7 +587,11 @@ async def initial_scan(req: ScanRequest):
                 "visibilityBaseline": visibility_baseline,
                 "canonicalUrl": canonical_url,
                 "metaTagCount": meta_tag_count,
-                "headings": "",
+                "headings": headings,
+                "h1Count": h1_count,
+                "h1Texts": headings["h1"][:5],  # First 5 H1s
+                "h2Count": len(headings["h2"]),
+                "h3Count": len(headings["h3"]),
             },
             "contentAnalysis": {
                 "title": title,
