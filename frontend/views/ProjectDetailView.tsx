@@ -1692,7 +1692,7 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
 
         {/* Initial Scan Results */}
         {project.initialScan && (
-          <InitialScanResults scan={project.initialScan} />
+          <InitialScanResults scan={project.initialScan} project={project} />
         )}
 
         {/* Competitor Analysis */}
