@@ -152,22 +152,27 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
         comprehensiveData = await runComprehensiveAnalysis(normalizedUrl)
         setScanProgress(88)
         
-        // Also get content chunks for questions
-        setScanStatus("Extracting content insights...")
-        const chunksRes = await getContentChunks(normalizedUrl, 10)
-        
-        const rawQuestions = (chunksRes?.chunks || [])
-          .map((c: any) => String(c?.question || ""))
-          .filter(Boolean)
-        // Simple noise filter for unrelated/political/news questions
-        const noise = [/bundestag/i, /regierung/i, /koalition/i, /wahl/i, /ampel/i, /covid|corona/i]
-        const filteredQuestions = Array.from(
-          new Set(
-            rawQuestions
-              .map((q) => q.replace(/^#+\s*/, "").trim())
-              .filter((q) => q.length > 8 && !noise.some((rx) => rx.test(q)))
-          )
-        ).slice(0, 8)
+        // Also get content chunks for questions (non-blocking)
+        let filteredQuestions: string[] = []
+        try {
+          setScanStatus("Extracting content insights...")
+          const chunksRes = await getContentChunks(normalizedUrl, 10)
+          
+          const rawQuestions = (chunksRes?.chunks || [])
+            .map((c: any) => String(c?.question || ""))
+            .filter(Boolean)
+          // Simple noise filter for unrelated/political/news questions
+          const noise = [/bundestag/i, /regierung/i, /koalition/i, /wahl/i, /ampel/i, /covid|corona/i]
+          filteredQuestions = Array.from(
+            new Set(
+              rawQuestions
+                .map((q) => q.replace(/^#+\s*/, "").trim())
+                .filter((q) => q.length > 8 && !noise.some((rx) => rx.test(q)))
+            )
+          ).slice(0, 8)
+        } catch (chunkError) {
+          console.warn("Content chunks extraction failed, using comprehensive data:", chunkError)
+        }
         setScanProgress(92)
 
         // Use comprehensive analysis results
