@@ -1267,3 +1267,69 @@ function InitialScanResults({ scan }: { scan: InitialScanResult }) {
     </div>
   )
 }
+
+// Main exported component
+export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
+  const [activeTab, setActiveTab] = useState<string>("overview")
+  
+  if (!project) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-slate-400">No project selected</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-full overflow-y-auto p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <button 
+            onClick={onBack}
+            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-white">{project.name}</h1>
+            <p className="text-slate-400">{project.domain}</p>
+          </div>
+          <div className="ml-auto flex items-center gap-4">
+            <div className="text-right">
+              <div className="text-3xl font-bold text-white">{project.score}</div>
+              <div className="text-sm text-slate-400">AI Readiness Score</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Initial Scan Results */}
+        {project.initialScan && (
+          <InitialScanResults scan={project.initialScan} />
+        )}
+
+        {/* Competitor Analysis */}
+        {project.competitors && project.competitors.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Swords className="w-5 h-5 text-indigo-400" />
+              Competitor Analysis
+            </h2>
+            <CompetitorComparisonTable 
+              userScore={project.score}
+              userArtifacts={project.initialScan?.artifacts || {}}
+              competitors={project.competitors}
+            />
+          </div>
+        )}
+
+        {/* AI Analysis */}
+        {project.aiAnalysis && (
+          <AIAnalysisSection analysis={project.aiAnalysis} />
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default ProjectDetailView
