@@ -87,44 +87,47 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
     setError(null)
     setScanProgress(0)
 
+    // Progress tracking - only moves forward
+    let currentProgress = 0
+    const updateProgress = (newProgress: number, status?: string) => {
+      if (newProgress > currentProgress) {
+        currentProgress = newProgress
+        setScanProgress(newProgress)
+      }
+      if (status) {
+        setScanStatus(status)
+      }
+    }
+
     // Progress messages that will cycle while waiting for the actual API
     const progressMessages = [
-      { msg: "Initializing crawler...", minPct: 5 },
-      { msg: "Fetching homepage...", minPct: 10 },
-      { msg: "Checking robots.txt and AI policies...", minPct: 15 },
-      { msg: "Scanning for sitemap.xml...", minPct: 20 },
-      { msg: "Looking for RSS/Atom feeds...", minPct: 25 },
-      { msg: "Analyzing JSON-LD schemas...", minPct: 30 },
-      { msg: "Checking llms.txt and AI manifests...", minPct: 35 },
-      { msg: "Running initial content analysis...", minPct: 40 },
-      { msg: "Extracting content chunks...", minPct: 45 },
-      { msg: "Running topic recognition...", minPct: 50 },
-      { msg: "Analyzing content gaps...", minPct: 55 },
-      { msg: "Auditing NAP data...", minPct: 60 },
-      { msg: "Searching for competitors...", minPct: 65 },
-      { msg: "Running batch analysis...", minPct: 70 },
-      { msg: "Processing results...", minPct: 75 },
-      { msg: "Finalizing analysis...", minPct: 78 },
+      { msg: "Initializing crawler...", pct: 5 },
+      { msg: "Fetching homepage...", pct: 8 },
+      { msg: "Checking robots.txt and AI policies...", pct: 12 },
+      { msg: "Scanning for sitemap.xml...", pct: 16 },
+      { msg: "Looking for RSS/Atom feeds...", pct: 20 },
+      { msg: "Analyzing JSON-LD schemas...", pct: 24 },
+      { msg: "Checking llms.txt and AI manifests...", pct: 28 },
+      { msg: "Running initial content analysis...", pct: 32 },
+      { msg: "Processing page structure...", pct: 36 },
+      { msg: "Extracting metadata...", pct: 40 },
+      { msg: "Building content profile...", pct: 44 },
+      { msg: "Analyzing business information...", pct: 48 },
+      { msg: "Identifying key topics...", pct: 52 },
+      { msg: "Mapping content relationships...", pct: 56 },
+      { msg: "Running deep analysis...", pct: 60 },
     ]
 
     let messageIndex = 0
-    let currentProgress = 0
     
-    // Slower progress: update every 4 seconds, and slow down as we approach 80%
+    // Slower progress: update every 5 seconds
     const progressInterval = setInterval(() => {
       if (messageIndex < progressMessages.length) {
         const step = progressMessages[messageIndex]
-        setScanStatus(step.msg)
-        
-        // Gradually increase progress but cap at 80% until done
-        const targetPct = Math.min(step.minPct, 80)
-        if (currentProgress < targetPct) {
-          currentProgress = targetPct
-          setScanProgress(currentProgress)
-        }
+        updateProgress(step.pct, step.msg)
         messageIndex++
       } else {
-        // Keep cycling the last few messages while waiting
+        // Keep showing waiting messages but don't change progress
         const waitingMessages = [
           "Still processing... this may take a moment",
           "Analyzing website structure...",
@@ -135,12 +138,11 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
         setScanStatus(waitingMessages[waitIdx])
         messageIndex++
       }
-    }, 4000)
+    }, 5000)
 
     try {
       const scanResult = await initialScan(normalizedUrl)
-      setScanProgress(75)
-      setScanStatus("Initial scan complete, running comprehensive LLM analysis...")
+      updateProgress(65, "Initial scan complete, running comprehensive LLM analysis...")
 
       // Run comprehensive LLM-based analysis (Scrape → LLM Parse → Structured Data)
       let analysisError: string | undefined
