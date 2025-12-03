@@ -73,7 +73,7 @@ from typing import Any
 import re
 from collections import Counter
 
-router = APIRouter(prefix="/api/v1", tags=["api"])
+router = APIRouter(prefix="/api", tags=["api"])
 
 
 @router.get("/health", response_model=HealthResponse)
