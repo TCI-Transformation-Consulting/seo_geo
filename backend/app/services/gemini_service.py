@@ -640,7 +640,45 @@ Antworte als JSON:
   "reasoning": "Begründung"
 }"""
 
-    # Test query without mentioning the company name
+    # IMPROVED: Two-part test for more accurate knowledge detection
+    
+    # Part 1: Direct knowledge test
+    direct_test = f"""Kennst du das Unternehmen "{company_name}"?
+Falls ja, beschreibe kurz (max 2-3 Sätze):
+- Was macht dieses Unternehmen?
+- In welcher Branche ist es tätig?
+
+Falls nein oder unsicher, sage es ehrlich."""
+
+    direct_response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=direct_test,
+        config={
+            "system_instruction": """Du bist ein ehrlicher Assistent.
+Wenn du ein Unternehmen nicht kennst oder unsicher bist, sage es klar.
+Erfinde NICHTS.
+
+Antworte als JSON:
+{
+  "known": true/false,
+  "confidence": "high" | "low" | "none",
+  "description": "Beschreibung falls bekannt" oder null,
+  "source_assumption": "Warum du glaubst, es zu kennen oder nicht"
+}""",
+            "response_mime_type": "application/json",
+        },
+    )
+    
+    try:
+        direct_data = json.loads(direct_response.text or "{}")
+        is_known = direct_data.get("known", False)
+        confidence = direct_data.get("confidence", "none")
+    except:
+        is_known = False
+        confidence = "none"
+    
+    # Part 2: Competitive context test (only if NOT directly known with high confidence)
+    # This tests if the brand appears in industry context
     contents = f"""Welche Unternehmen sind führend in der Branche "{industry}" im Bereich {service_hint}?
 {f'Speziell in {location}?' if location else ''}
 
