@@ -1,10 +1,3 @@
 {
-  "/page": "app/page.js",
-  "/api/auth/login/route": "app/api/auth/login/route.js",
-  "/api/health/route": "app/api/health/route.js",
-  "/api/initial-scan/route": "app/api/initial-scan/route.js",
-  "/api/analysis/comprehensive/route": "app/api/analysis/comprehensive/route.js",
-  "/api/content/chunks/route": "app/api/content/chunks/route.js",
-  "/api/scan/batch/route": "app/api/scan/batch/route.js",
-  "/api/analysis/competitor-search/route": "app/api/analysis/competitor-search/route.js"
+  "/page": "app/page.js"
 }
