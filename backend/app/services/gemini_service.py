@@ -656,10 +656,8 @@ Antworte als JSON:
   "description": "1 Satz oder null"
 }""",
             "response_mime_type": "application/json",
-            "generation_config": {
-                "max_output_tokens": 100,  # Limit output for speed
-                "temperature": 0.1,  # More deterministic = faster
-            }
+            "max_output_tokens": 100,
+            "temperature": 0.1,
         },
     )
     
