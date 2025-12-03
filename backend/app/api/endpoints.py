@@ -1111,6 +1111,212 @@ async def schema_audit_backend(req: dict):
         raise HTTPException(status_code=502, detail=f"Schema audit failed: {e}")
 
 
+@router.post("/analysis/schema-audit-multi")
+async def schema_audit_multi_page(req: dict):
+    """
+    Multi-page schema audit: scans multiple pages on a domain for JSON-LD.
+    Accepts body: { "url": str, "max_pages": int (default 10) }
+    Returns per-page schema data and aggregate recommendations.
+    """
+    try:
+        url = (req.get("url") if isinstance(req, dict) else None)
+        max_pages = (req.get("max_pages") if isinstance(req, dict) else 10) or 10
+        
+        if not url:
+            raise HTTPException(status_code=400, detail="Provide 'url'.")
+        
+        base_url = str(url).rstrip("/")
+        parsed = urlparse(base_url)
+        hostname = parsed.netloc
+        scheme = parsed.scheme or "https"
+        
+        # Handle www/non-www
+        if hostname.startswith("www."):
+            hostname_alt = hostname[4:]
+        else:
+            hostname_alt = f"www.{hostname}"
+        
+        bases = [f"{scheme}://{hostname}", f"{scheme}://{hostname_alt}"]
+        
+        # Important pages to check
+        page_paths = [
+            "",  # Homepage
+            "/impressum",
+            "/kontakt",
+            "/contact",
+            "/about",
+            "/ueber-uns",
+            "/leistungen",
+            "/services",
+            "/produkte",
+            "/products",
+            "/blog",
+            "/news",
+            "/faq",
+        ]
+        
+        # Build URL list
+        pages_to_check = []
+        for base in bases:
+            for path in page_paths:
+                pages_to_check.append(f"{base}{path}")
+        
+        # Schema rules
+        rules = {
+            "Organization": {"required": ["name"], "recommended": ["url", "logo", "sameAs", "contactPoint"]},
+            "LocalBusiness": {"required": ["name", "address"], "recommended": ["telephone", "openingHours", "geo"]},
+            "Product": {"required": ["name"], "recommended": ["description", "brand", "offers", "image"]},
+            "Service": {"required": ["name"], "recommended": ["description", "provider", "areaServed"]},
+            "FAQPage": {"required": ["mainEntity"], "recommended": []},
+            "Article": {"required": ["headline"], "recommended": ["author", "datePublished", "image"]},
+            "BlogPosting": {"required": ["headline"], "recommended": ["author", "datePublished"]},
+            "WebPage": {"required": ["name"], "recommended": ["description", "breadcrumb"]},
+            "BreadcrumbList": {"required": ["itemListElement"], "recommended": []},
+            "ContactPage": {"required": [], "recommended": ["name", "description"]},
+        }
+        
+        per_page_results = []
+        all_types_found = set()
+        all_schemas = []
+        scanned_count = 0
+        
+        for page_url in pages_to_check:
+            if scanned_count >= max_pages:
+                break
+                
+            try:
+                html = await fetch_html(page_url)
+                if not html or len(html) < 100:
+                    continue
+                    
+                scanned_count += 1
+                soup = BeautifulSoup(html, "html.parser")
+                
+                # Extract JSON-LD
+                page_schemas = []
+                page_types = []
+                
+                for script in soup.find_all("script", attrs={"type": "application/ld+json"}):
+                    try:
+                        schema_data = json.loads(script.string or "null")
+                        if schema_data:
+                            page_schemas.append(schema_data)
+                            
+                            # Collect types
+                            def get_types(obj):
+                                types = []
+                                if isinstance(obj, dict):
+                                    t = obj.get("@type")
+                                    if isinstance(t, str):
+                                        types.append(t)
+                                    elif isinstance(t, list):
+                                        types.extend([x for x in t if isinstance(x, str)])
+                                    for v in obj.values():
+                                        types.extend(get_types(v))
+                                elif isinstance(obj, list):
+                                    for item in obj:
+                                        types.extend(get_types(item))
+                                return types
+                            
+                            page_types.extend(get_types(schema_data))
+                    except Exception:
+                        continue
+                
+                page_types = list(dict.fromkeys(page_types))
+                all_types_found.update(page_types)
+                all_schemas.extend(page_schemas)
+                
+                # Analyze completeness per type
+                type_analysis = []
+                for t in page_types:
+                    r = rules.get(t)
+                    if r:
+                        # Check properties in HTML (simple heuristic)
+                        missing_req = [k for k in r["required"] if k.lower() not in html.lower()]
+                        missing_rec = [k for k in r["recommended"] if k.lower() not in html.lower()]
+                        comp = max(0, 100 - (len(missing_req) * 40 + len(missing_rec) * 10))
+                        type_analysis.append({
+                            "type": t,
+                            "completeness": comp,
+                            "missingRequired": missing_req,
+                            "missingRecommended": missing_rec,
+                        })
+                
+                per_page_results.append({
+                    "url": page_url,
+                    "schemasFound": len(page_schemas),
+                    "types": page_types,
+                    "typeAnalysis": type_analysis,
+                    "hasLocalBusiness": "LocalBusiness" in page_types,
+                    "hasOrganization": "Organization" in page_types,
+                    "hasFAQ": "FAQPage" in page_types,
+                })
+                
+            except Exception:
+                continue
+        
+        # Aggregate analysis
+        all_types_list = list(all_types_found)
+        missing_important = []
+        
+        important_types = ["Organization", "LocalBusiness", "WebPage"]
+        for t in important_types:
+            if t not in all_types_found:
+                missing_important.append({
+                    "type": t,
+                    "reason": f"{t} schema not found on any scanned page",
+                    "impact": "high" if t in ["Organization", "LocalBusiness"] else "medium",
+                    "recommendation": f"Add {t} schema to improve AI/search visibility"
+                })
+        
+        # Calculate overall score
+        total_completeness = []
+        for page in per_page_results:
+            for ta in page.get("typeAnalysis", []):
+                total_completeness.append(ta["completeness"])
+        
+        overall_score = int(sum(total_completeness) / max(1, len(total_completeness))) if total_completeness else 0
+        
+        # Generate recommendations
+        recommendations = []
+        if not any(p.get("hasLocalBusiness") for p in per_page_results):
+            recommendations.append({
+                "priority": "high",
+                "action": "Add LocalBusiness schema",
+                "description": "No LocalBusiness schema found. Add it to encode NAP data for local SEO.",
+                "pages": ["/impressum", "/kontakt"]
+            })
+        if not any(p.get("hasOrganization") for p in per_page_results):
+            recommendations.append({
+                "priority": "high", 
+                "action": "Add Organization schema",
+                "description": "No Organization schema found. Add it to the homepage.",
+                "pages": ["/"]
+            })
+        if not any(p.get("hasFAQ") for p in per_page_results):
+            recommendations.append({
+                "priority": "medium",
+                "action": "Consider adding FAQPage schema",
+                "description": "FAQ schema can enable rich results in search.",
+                "pages": ["/faq", "/"]
+            })
+        
+        return {
+            "pagesScanned": scanned_count,
+            "perPageResults": per_page_results,
+            "allTypesFound": all_types_list,
+            "missingImportant": missing_important,
+            "overallScore": overall_score,
+            "recommendations": recommendations,
+            "summary": f"Scanned {scanned_count} pages. Found {len(all_types_list)} schema types. Overall completeness: {overall_score}%."
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Multi-page schema audit failed: {e}")
+
+
 @router.post("/analysis/fact-check", response_model=FactCheckResponse)
 async def fact_check(req: FactCheckRequest) -> FactCheckResponse:
     try:
