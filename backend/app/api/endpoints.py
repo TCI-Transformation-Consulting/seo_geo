@@ -56,6 +56,7 @@ from ..services.gemini_service import (
     generate_jsonld,
     search_competitors_grounded,
     grounded_competitor_analysis,
+    analyze_ai_visibility,
 )
 from ..services.generation_service import (
     generate_openapi_from_markdown,
