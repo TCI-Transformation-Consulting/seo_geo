@@ -104,12 +104,29 @@ export interface FactCheckResult {
   recommendations: string[]
 }
 
+export interface AIVisibility {
+  totalScore: number
+  grade: string
+  summary: string
+  ungroundedScore: number
+  groundedPercentage: number
+  priorityActions: string[]
+  contentGaps: string[]
+  groundedResults: Array<{
+    question: string
+    answer: string
+    found_in_content: boolean
+    confidence: number
+  }>
+}
+
 export interface AIAnalysis {
   topicRecognition: TopicRecognition
   contentGap: ContentGapAnalysis
   napData: NAPData
   factCheck: FactCheckResult
   userQuestions: string[]
+  aiVisibility?: AIVisibility
 }
 
 export interface TechnicalStatus {
