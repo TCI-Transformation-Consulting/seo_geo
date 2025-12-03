@@ -1151,14 +1151,39 @@ function InitialScanResults({ scan }: { scan: InitialScanResult }) {
             <div className="bg-slate-900/40 border border-slate-700 rounded-lg p-4 md:col-span-2">
               <div className="text-sm text-slate-400 flex items-center gap-2 mb-1">
                 <Eye className="w-4 h-4 text-cyan-400" />
-                Visibility Baseline
+                AI Visibility Score
               </div>
-              <div className="text-slate-200">
-                {scan.technicalStatus?.visibilityBaseline === 2
-                  ? "Strong (Organization/LocalBusiness + contact signals)"
-                  : scan.technicalStatus?.visibilityBaseline === 1
-                    ? "Basic (Organization/LocalBusiness detected)"
-                    : "None"}
+              <div className="flex items-center gap-3">
+                {scan.analysis?.aiVisibility ? (
+                  <>
+                    <span className={`text-2xl font-bold ${
+                      scan.analysis.aiVisibility.grade === "A" ? "text-emerald-400" :
+                      scan.analysis.aiVisibility.grade === "B" ? "text-blue-400" :
+                      scan.analysis.aiVisibility.grade === "C" ? "text-amber-400" :
+                      scan.analysis.aiVisibility.grade === "D" ? "text-orange-400" :
+                      "text-red-400"
+                    }`}>
+                      {scan.analysis.aiVisibility.totalScore}/100
+                    </span>
+                    <span className={`px-2 py-1 rounded text-sm font-medium ${
+                      scan.analysis.aiVisibility.grade === "A" ? "bg-emerald-500/20 text-emerald-400" :
+                      scan.analysis.aiVisibility.grade === "B" ? "bg-blue-500/20 text-blue-400" :
+                      scan.analysis.aiVisibility.grade === "C" ? "bg-amber-500/20 text-amber-400" :
+                      scan.analysis.aiVisibility.grade === "D" ? "bg-orange-500/20 text-orange-400" :
+                      "bg-red-500/20 text-red-400"
+                    }`}>
+                      Grade {scan.analysis.aiVisibility.grade}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-slate-400 text-sm">
+                    {scan.technicalStatus?.visibilityBaseline === 2
+                      ? "Strong (Organization/LocalBusiness + contact signals)"
+                      : scan.technicalStatus?.visibilityBaseline === 1
+                        ? "Basic (Organization/LocalBusiness detected)"
+                        : "Run full analysis for AI Visibility Score"}
+                  </span>
+                )}
               </div>
             </div>
 
