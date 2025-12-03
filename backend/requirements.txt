@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pydantic
+python-dotenv
+google-genai
+httpx
+beautifulsoup4
+crawl4ai
+playwright
+lxml
+passlib[bcrypt]
+PyJWT
+email-validator

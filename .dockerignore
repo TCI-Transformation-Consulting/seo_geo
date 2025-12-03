@@ -1,0 +1,31 @@
+# Prevent sending large/unnecessary files to Docker build context
+node_modules
+npm-debug.log
+pnpm-debug.log
+yarn.lock
+*.log
+
+# Vite dev artifacts
+dist
+.cache
+.vite
+
+# Editor/OS
+.DS_Store
+.vscode
+.idea
+
+# Python virtual envs and caches
+backend/.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Tests and coverage
+coverage
+.pytest_cache
+
+# Git
+.git
+.gitignore

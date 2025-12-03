@@ -1,0 +1,5 @@
+{
+  "name": "NEURO-WEB",
+  "description": "Infrastructure for the AI Economy. A commercial dashboard for analyzing, simulating, and optimizing web presence for AI Agents (ChatGPT, Gemini, Perplexity).",
+  "requestFramePermissions": []
+}
