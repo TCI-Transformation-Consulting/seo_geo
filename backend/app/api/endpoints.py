@@ -1479,3 +1479,32 @@ async def grounded_analysis(req: GroundedAnalysisRequest) -> GroundedAnalysisRes
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Grounded analysis failed: {e}")
+
+
+# AI Visibility Analysis with Reasoning
+@router.post("/analysis/ai-visibility", response_model=AIVisibilityResponse)
+async def analyze_ai_visibility_endpoint(request: AIVisibilityRequest):
+    """
+    Analyze AI visibility for a domain/brand across AI platforms (ChatGPT, Claude, Perplexity, Gemini).
+    Returns visibility scores WITH DETAILED REASONING for each platform.
+    
+    Visibility levels:
+    - 0: Domain/brand NOT mentioned by AI
+    - 1: Domain/brand mentioned peripherally  
+    - 2: Domain/brand clearly recommended / primarily mentioned
+    """
+    from app.services.gemini_service import analyze_ai_visibility
+    
+    # Extract domain from URL
+    from urllib.parse import urlparse
+    parsed = urlparse(str(request.url))
+    domain = parsed.netloc or parsed.path
+    
+    result = analyze_ai_visibility(
+        domain=domain,
+        brand_name=request.brand_name,
+        keywords=request.keywords,
+        competitors=request.competitors or []
+    )
+    
+    return AIVisibilityResponse(**result)
