@@ -87,27 +87,55 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
     setError(null)
     setScanProgress(0)
 
-    const progressSteps = [
-      { msg: "Initializing crawler...", pct: 5 },
-      { msg: "Fetching homepage...", pct: 15 },
-      { msg: "Checking robots.txt and AI policies...", pct: 25 },
-      { msg: "Scanning for sitemap.xml...", pct: 35 },
-      { msg: "Looking for RSS/Atom feeds...", pct: 40 },
-      { msg: "Analyzing JSON-LD schemas...", pct: 50 },
-      { msg: "Checking llms.txt and AI manifests...", pct: 55 },
-      { msg: "Running initial content analysis...", pct: 65 },
-      { msg: "Identifying competitors (if available)...", pct: 75 },
-      { msg: "Preparing recommendations...", pct: 95 },
+    // Progress messages that will cycle while waiting for the actual API
+    const progressMessages = [
+      { msg: "Initializing crawler...", minPct: 5 },
+      { msg: "Fetching homepage...", minPct: 10 },
+      { msg: "Checking robots.txt and AI policies...", minPct: 15 },
+      { msg: "Scanning for sitemap.xml...", minPct: 20 },
+      { msg: "Looking for RSS/Atom feeds...", minPct: 25 },
+      { msg: "Analyzing JSON-LD schemas...", minPct: 30 },
+      { msg: "Checking llms.txt and AI manifests...", minPct: 35 },
+      { msg: "Running initial content analysis...", minPct: 40 },
+      { msg: "Extracting content chunks...", minPct: 45 },
+      { msg: "Running topic recognition...", minPct: 50 },
+      { msg: "Analyzing content gaps...", minPct: 55 },
+      { msg: "Auditing NAP data...", minPct: 60 },
+      { msg: "Searching for competitors...", minPct: 65 },
+      { msg: "Running batch analysis...", minPct: 70 },
+      { msg: "Processing results...", minPct: 75 },
+      { msg: "Finalizing analysis...", minPct: 78 },
     ]
 
-    let stepIndex = 0
+    let messageIndex = 0
+    let currentProgress = 0
+    
+    // Slower progress: update every 4 seconds, and slow down as we approach 80%
     const progressInterval = setInterval(() => {
-      if (stepIndex < progressSteps.length) {
-        setScanStatus(progressSteps[stepIndex].msg)
-        setScanProgress(progressSteps[stepIndex].pct)
-        stepIndex++
+      if (messageIndex < progressMessages.length) {
+        const step = progressMessages[messageIndex]
+        setScanStatus(step.msg)
+        
+        // Gradually increase progress but cap at 80% until done
+        const targetPct = Math.min(step.minPct, 80)
+        if (currentProgress < targetPct) {
+          currentProgress = targetPct
+          setScanProgress(currentProgress)
+        }
+        messageIndex++
+      } else {
+        // Keep cycling the last few messages while waiting
+        const waitingMessages = [
+          "Still processing... this may take a moment",
+          "Analyzing website structure...",
+          "Running deep content analysis...",
+          "Almost there...",
+        ]
+        const waitIdx = (messageIndex - progressMessages.length) % waitingMessages.length
+        setScanStatus(waitingMessages[waitIdx])
+        messageIndex++
       }
-    }, 2000)
+    }, 4000)
 
     try {
       const scanResult = await initialScan(normalizedUrl)
