@@ -372,13 +372,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
   }
 
   return (
-    <div className="min-h-screen text-slate-50 font-sans animate-fade-in relative">
-      {/* Background gradient */}
-      <div className="gradient-bg" />
-      
+    <div className="min-h-screen text-slate-50 font-sans animate-fade-in">
       {/* Hero Section */}
       <div className="relative overflow-hidden border-b border-white/5">
-        <div className="absolute inset-0 opacity-30">
+        <div className="absolute inset-0 opacity-30 pointer-events-none">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500 rounded-full blur-[128px]" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-500 rounded-full blur-[128px]" />
         </div>
@@ -393,7 +390,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-12 relative z-10">
+      <div className="max-w-4xl mx-auto px-6 py-12">
         {/* Step 1: URL Input */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
