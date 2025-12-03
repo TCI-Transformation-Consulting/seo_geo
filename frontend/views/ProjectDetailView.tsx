@@ -1812,15 +1812,7 @@ const GenerateFilesSection: React.FC<{ project: ClientProject }> = ({ project })
   ]
 
   return (
-    <div className="mt-8">
-      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <Sparkles className="w-5 h-5 text-amber-400" />
-        Generate AI-Ready Files
-      </h2>
-      <p className="text-slate-400 text-sm mb-4">
-        One-click generation of structured data and configuration files to improve AI discoverability.
-      </p>
-      
+    <div>
       <div className="grid md:grid-cols-3 gap-3">
         {fileTypes.map(ft => {
           const Icon = ft.icon
