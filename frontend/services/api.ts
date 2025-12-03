@@ -483,7 +483,7 @@ export const runAIVisibilityAnalysis = async (url: string, location?: string) =>
       summary: string
       priority_actions: string[]
     }
-  }>("/analysis/ai-visibility-full", { url, location }, 180000)
+  }>("/analysis/ai-visibility-full", { url, location }, 240000)
 
 // Generate intelligent user questions
 export const generateUserQuestions = async (url: string, industry?: string, location?: string) =>
