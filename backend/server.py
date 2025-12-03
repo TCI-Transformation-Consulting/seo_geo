@@ -51,7 +51,7 @@ try:
     from app.auth import router as auth_router
     
     app.include_router(api_router)
-    app.include_router(auth_router, prefix="/api/v1")
+    app.include_router(auth_router, prefix="/api")
 except Exception as e:
     print(f"Warning: Could not import API routes: {e}")
     
