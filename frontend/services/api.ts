@@ -376,8 +376,8 @@ export const generateLocalBusinessSchema = async (url: string, content?: string,
     60000,
   )
 
-export const generateLlmsTxt = async (url: string, content?: string) =>
-  postJson<{ llmstxt: string; filename: string }>("/generation/llms-txt", { url, content }, 60000)
+export const generateLlmsTxt = async (url: string) =>
+  postJson<{ llms_txt: string }>("/generation/llms", { url }, 60000)
 
 export const runPackageAnalysis = async (
   url: string,
