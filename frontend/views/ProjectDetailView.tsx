@@ -809,12 +809,41 @@ function AIAnalysisSection({ analysis }: { analysis: AIAnalysis }) {
                 </div>
               )}
 
-              {/* Question-Level Results */}
+              {/* Ungrounded Test Details */}
+              {analysis.aiVisibility.ungroundedScore !== undefined && (
+                <div>
+                  <h4 className="text-xs font-medium text-slate-400 uppercase mb-3 flex items-center gap-2">
+                    <Brain className="w-4 h-4" />
+                    Ungrounded Brand Recall Test
+                  </h4>
+                  <div className="p-4 rounded-lg border bg-slate-900/50 border-slate-700">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <p className="text-sm font-medium text-white flex-1">
+                        Was the brand mentioned when asking about leading companies in the industry?
+                      </p>
+                      {analysis.aiVisibility.ungroundedScore > 0 ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                      )}
+                    </div>
+                    <div className="text-xs">
+                      <span className={analysis.aiVisibility.ungroundedScore > 0 ? "text-emerald-400" : "text-red-400"}>
+                        {analysis.aiVisibility.ungroundedScore > 0 ? "✓ Brand was recalled" : "✗ Brand was not recalled"}
+                      </span>
+                      <span className="text-slate-500 mx-2">•</span>
+                      <span className="text-slate-400">Score: {analysis.aiVisibility.ungroundedScore}/100</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Grounded Question-Level Results */}
               {analysis.aiVisibility.groundedResults?.length > 0 && (
                 <div>
                   <h4 className="text-xs font-medium text-slate-400 uppercase mb-3 flex items-center gap-2">
                     <MessageCircleQuestion className="w-4 h-4" />
-                    Question-Level Analysis ({analysis.aiVisibility.groundedResults.length} questions tested)
+                    Grounded Question Analysis ({analysis.aiVisibility.groundedResults.length} questions tested)
                   </h4>
                   <div className="space-y-2">
                     {analysis.aiVisibility.groundedResults.map((result, i) => (
