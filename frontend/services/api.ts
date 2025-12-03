@@ -443,6 +443,57 @@ export const runComprehensiveAnalysis = async (url: string) =>
     }
   }>("/analysis/comprehensive", { url }, 120000)
 
+// AI Visibility Full Analysis
+export const runAIVisibilityAnalysis = async (url: string, location?: string) =>
+  postJson<{
+    company_name: string
+    industry: string
+    location: string
+    user_questions: string[]
+    ungrounded: {
+      recalled: boolean
+      mention_type: "explicit" | "indirect" | "none"
+      score: number
+      max_score: number
+      context: string
+      competitors_mentioned: string[]
+      reasoning: string
+    }
+    grounded: {
+      total_score: number
+      max_score: number
+      percentage: number
+      results: {
+        question: string
+        answerable: boolean
+        answer_quality: "complete" | "partial" | "none"
+        score: number
+        max_score: number
+        missing_info: string | null
+        answer_preview: string | null
+      }[]
+      content_gaps: string[]
+      recommendations: string[]
+    }
+    visibility_score: {
+      total_score: number
+      ungrounded_score: number
+      grounded_score: number
+      grade: "A" | "B" | "C" | "D" | "F"
+      summary: string
+      priority_actions: string[]
+    }
+  }>("/analysis/ai-visibility-full", { url, location }, 180000)
+
+// Generate intelligent user questions
+export const generateUserQuestions = async (url: string, industry?: string, location?: string) =>
+  postJson<{
+    questions: string[]
+    industry: string
+    company_name: string | null
+    primary_topic: string | null
+  }>("/analysis/user-questions", { url, industry, location }, 60000)
+
 export const runPackageAnalysis = async (
   url: string,
   packageId: string,
