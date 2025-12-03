@@ -161,6 +161,10 @@ class NAPData(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     socials: List[str] = []
+    scanned_pages: List[str] = []
+    pages_count: int = 0
+    completeness: str = "0/4"
+    is_complete: bool = False
 
 
 class NAPAuditRequest(BaseModel):
