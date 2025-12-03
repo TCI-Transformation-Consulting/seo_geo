@@ -990,6 +990,61 @@ function InitialScanResults({ scan }: { scan: InitialScanResult }) {
                     : "None"}
               </div>
             </div>
+
+            {/* H1 Structure Audit */}
+            <div className="bg-slate-900/40 border border-slate-700 rounded-lg p-4 md:col-span-2">
+              <div className="text-sm text-slate-400 flex items-center gap-2 mb-2">
+                <Layers className="w-4 h-4 text-amber-400" />
+                Heading Structure (SEO)
+              </div>
+              <div className="grid grid-cols-3 gap-4 mb-3">
+                <div className="text-center">
+                  <div className={`text-2xl font-bold ${
+                    scan.technicalStatus?.h1Count === 1 ? "text-emerald-400" : 
+                    scan.technicalStatus?.h1Count === 0 ? "text-red-400" : "text-amber-400"
+                  }`}>
+                    {scan.technicalStatus?.h1Count ?? scan.contentAnalysis?.headingStructure?.h1 ?? 0}
+                  </div>
+                  <div className="text-xs text-slate-500">H1 Tags</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-slate-300">
+                    {scan.technicalStatus?.h2Count ?? scan.contentAnalysis?.headingStructure?.h2 ?? 0}
+                  </div>
+                  <div className="text-xs text-slate-500">H2 Tags</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-slate-300">
+                    {scan.technicalStatus?.h3Count ?? scan.contentAnalysis?.headingStructure?.h3 ?? 0}
+                  </div>
+                  <div className="text-xs text-slate-500">H3 Tags</div>
+                </div>
+              </div>
+              {scan.technicalStatus?.h1Texts && scan.technicalStatus.h1Texts.length > 0 && (
+                <div>
+                  <div className="text-xs text-slate-500 mb-1">H1 Content:</div>
+                  <div className="space-y-1">
+                    {scan.technicalStatus.h1Texts.map((h1: string, i: number) => (
+                      <div key={i} className="text-sm text-slate-200 bg-slate-800/50 px-2 py-1 rounded truncate">
+                        {h1}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(scan.technicalStatus?.h1Count ?? 0) === 0 && (
+                <div className="text-xs text-red-400 mt-2 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  Missing H1 tag - add a single descriptive H1 heading
+                </div>
+              )}
+              {(scan.technicalStatus?.h1Count ?? 0) > 1 && (
+                <div className="text-xs text-amber-400 mt-2 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Multiple H1 tags detected - consider using only one H1 per page
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
