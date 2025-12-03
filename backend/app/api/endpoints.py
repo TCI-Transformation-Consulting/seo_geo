@@ -864,6 +864,8 @@ async def nap_audit(req: NAPAuditRequest) -> NAPAuditResponse:
     - /kontakt, /contact
     - /about, /ueber-uns
     """
+    from ..models.schemas import NAPData
+    
     try:
         base_url = str(req.url).rstrip("/")
         parsed = urlparse(base_url)
@@ -909,18 +911,25 @@ async def nap_audit(req: NAPAuditRequest) -> NAPAuditResponse:
         if len(combined_markdown) > 100000:
             combined_markdown = combined_markdown[:100000]
         
-        nap = extract_nap_json(combined_markdown)
-        
-        # Add metadata about scanned pages
-        nap["_scanned_pages"] = scanned_pages
-        nap["_pages_count"] = len(scanned_pages)
+        nap_raw = extract_nap_json(combined_markdown)
         
         # Calculate completeness
-        fields_found = sum(1 for k in ["name", "address", "phone", "email"] if nap.get(k))
-        nap["_completeness"] = f"{fields_found}/4"
-        nap["_is_complete"] = fields_found >= 3  # At least name, address, phone
+        fields_found = sum(1 for k in ["name", "address", "phone", "email"] if nap_raw.get(k))
         
-        return NAPAuditResponse(nap=nap)
+        # Build NAPData response
+        nap_data = NAPData(
+            name=nap_raw.get("name"),
+            address=nap_raw.get("address"),
+            phone=nap_raw.get("phone"),
+            email=nap_raw.get("email"),
+            socials=[],
+            scanned_pages=scanned_pages,
+            pages_count=len(scanned_pages),
+            completeness=f"{fields_found}/4",
+            is_complete=fields_found >= 3  # At least name, address, phone
+        )
+        
+        return NAPAuditResponse(nap=nap_data)
     except (Crawl4AINotConfigured, GeminiNotConfigured) as e:
         raise HTTPException(status_code=400, detail=str(e))
     except HTTPException:
