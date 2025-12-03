@@ -765,18 +765,19 @@ Nenne die wichtigsten Anbieter und erkläre kurz, warum sie relevant sind."""
         "direct_knowledge": {
             "known": is_known,
             "confidence": confidence,
-            "description": direct_data.get("description") if is_known else None
+            "description": direct_data.get("description") if is_known else None,
+            "query_used": f'Kennst du das Unternehmen "{company_name}"?'
         },
         "competitive_mention": {
             "mentioned": target_mentioned,
             "mention_type": mention_type,
-            "context": data.get("context", "")
+            "context": data.get("context", ""),
+            "query_used": contents[:200]
         },
         "score": score,
         "max_score": 2,
         "competitors_mentioned": [m for m in mentioned if isinstance(m, str)],
         "reasoning": data.get("reasoning", ""),
-        "query_used": contents[:200]
     }
 
 
