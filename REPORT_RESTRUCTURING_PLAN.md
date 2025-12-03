@@ -205,17 +205,10 @@
 ## 📍 Default Expand/Collapse States
 
 ```
-✅ Expanded by Default:
-  - Scores & Benchmarks (Wichtigste Info!)
-  - AI Visibility Analysis (Kern-Feature)
-  - AI-Ready Files & Artifacts (Actionable)
-
-❌ Collapsed by Default:
-  - Executive Summary (Optional Quick View)
-  - Content Analysis (Viel Text)
-  - Technical SEO (Details)
-  - Potential User Questions (Nice-to-have)
-  - Issues & Opportunities (Ende des Reports)
+✅ ALLES EXPANDED BY DEFAULT (User Request!)
+  - Alle Sektionen sind sofort sichtbar
+  - User kann selbst entscheiden was zu kollabieren
+  - Bessere Übersicht über alle Daten
 ```
 
 ---
