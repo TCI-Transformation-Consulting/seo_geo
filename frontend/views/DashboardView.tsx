@@ -12,11 +12,8 @@ interface DashboardViewProps {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ onSelectProject }) => {
   return (
-    <div className="p-8 animate-fade-in relative">
-      {/* Background gradient accent */}
-      <div className="gradient-bg" />
-      
-      <header className="mb-10 flex justify-between items-end relative z-10">
+    <div className="p-8 animate-fade-in">
+      <header className="mb-10 flex justify-between items-end">
         <div>
           <h2 className="text-4xl font-bold text-white mb-3 tracking-tight">Fleet Overview</h2>
           <p className="text-slate-400 text-lg">Monitoring <span className="text-indigo-400 font-semibold">{MOCK_PROJECTS.length}</span> active client infrastructures.</p>
@@ -27,7 +24,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onSelectProject })
         </button>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 relative z-10">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {MOCK_PROJECTS.map((project, index) => (
           <ProjectCard 
             key={project.id} 
