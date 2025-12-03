@@ -230,7 +230,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
       try {
         const maxPages =
           depthMode === "quick" ? 10 : depthMode === "standard" ? 40 : 1000 // Full: large cap; backend trims to sitemap size
-        setScanStatus(`Running batch: ${maxPages} pages…`)
+        setScanStatus(`Running batch analysis (${maxPages} pages)...`)
+        setScanProgress(95)
         const batch = await scanBatch(normalizedUrl, maxPages)
         batchSummary = {
           processed: batch.processed,
@@ -239,6 +240,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
           errors_count: batch.errors_count,
           sample: batch.sample || [],
         }
+        setScanProgress(97)
       } catch (e: any) {
         // Do not block initial result if batch fails
         console.warn("Batch scan failed:", e?.message || e)
@@ -271,6 +273,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
         }
 
       // Competitor discovery (Grounded with SERP fallback on backend)
+      setScanStatus("Searching for competitors...")
+      setScanProgress(98)
       let competitorsMapped: any[] = []
       try {
         const compRes = await postCompetitorSearch(hostname, hostname, 5)
