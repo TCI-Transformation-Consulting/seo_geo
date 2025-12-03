@@ -611,3 +611,130 @@ def grounded_competitor_analysis(domain: str, topic: str) -> Dict[str, Any]:
         "search_queries": search_queries,
         "sources": sources,
     }
+
+
+def analyze_ai_visibility(domain: str, brand_name: str, keywords: List[str], competitors: List[str] = None) -> Dict[str, Any]:
+    """
+    Analyze AI visibility for a domain/brand across different AI systems.
+    Returns visibility scores with reasoning for each AI platform.
+    
+    Visibility levels:
+    - 0: Domain/brand NOT mentioned
+    - 1: Domain/brand mentioned peripherally
+    - 2: Domain/brand clearly recommended / primarily mentioned
+    """
+    client = _get_client()
+    
+    # Prepare competitor context
+    competitor_context = ""
+    if competitors:
+        competitor_context = f"\nWettbewerber zum Vergleich: {', '.join(competitors[:5])}"
+    
+    system_instruction = """Du bist ein AI-Visibility-Analyst. Du simulierst, wie verschiedene KI-Systeme 
+(ChatGPT, Claude, Perplexity, Gemini) auf Suchanfragen zu bestimmten Keywords antworten würden.
+
+Analysiere für jedes Keyword, ob und wie die angegebene Domain/Marke erwähnt werden würde.
+
+Antworte NUR als JSON mit dieser Struktur:
+{
+  "overall_score": number (0-100),
+  "overall_reasoning": string (Zusammenfassung der Visibility),
+  "platforms": {
+    "chatgpt": {
+      "score": number (0, 1, oder 2),
+      "reasoning": string (Begründung warum dieses Level),
+      "would_mention": boolean,
+      "mention_context": string (wie würde die Erwähnung aussehen)
+    },
+    "claude": { ... gleiche Struktur ... },
+    "perplexity": { ... gleiche Struktur ... },
+    "gemini": { ... gleiche Struktur ... }
+  },
+  "keyword_analysis": [
+    {
+      "keyword": string,
+      "visibility_score": number (0-2),
+      "reasoning": string,
+      "improvement_suggestions": [string]
+    }
+  ],
+  "competitor_comparison": {
+    "our_position": string (leading/competitive/behind),
+    "reasoning": string,
+    "competitors_ahead": [string],
+    "competitors_behind": [string]
+  },
+  "improvement_recommendations": [
+    {
+      "priority": string (critical/high/medium/low),
+      "action": string,
+      "expected_impact": string,
+      "reasoning": string
+    }
+  ]
+}"""
+
+    contents = f"""Analysiere die KI-Visibility für:
+
+Domain: {domain}
+Markenname: {brand_name}
+Keywords: {', '.join(keywords)}{competitor_context}
+
+Für jede KI-Plattform (ChatGPT, Claude, Perplexity, Gemini):
+1. Würde diese KI bei den Keywords die Domain/Marke empfehlen?
+2. Wenn ja, wie prominent (0=nicht, 1=nebenbei, 2=Hauptempfehlung)?
+3. BEGRÜNDE JEDE EINSCHÄTZUNG - warum würde die KI so antworten?
+
+Berücksichtige:
+- Bekanntheitsgrad der Domain
+- Qualität und Tiefe des Contents
+- Vorhandene strukturierte Daten
+- Online-Präsenz und Verlinkungen
+- Relevanz für die Keywords
+
+Antworte nur mit dem JSON-Objekt."""
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=contents,
+            config={
+                "system_instruction": system_instruction,
+                "response_mime_type": "application/json",
+            },
+        )
+        
+        raw = response.text or "{}"
+        try:
+            data = json.loads(raw)
+        except Exception:
+            data = {}
+        
+        # Ensure proper structure
+        result = {
+            "domain": domain,
+            "brand_name": brand_name,
+            "keywords": keywords,
+            "overall_score": data.get("overall_score", 0),
+            "overall_reasoning": data.get("overall_reasoning", "Analyse nicht verfügbar"),
+            "platforms": data.get("platforms", {}),
+            "keyword_analysis": data.get("keyword_analysis", []),
+            "competitor_comparison": data.get("competitor_comparison", {}),
+            "improvement_recommendations": data.get("improvement_recommendations", []),
+        }
+        
+        return result
+        
+    except Exception as e:
+        return {
+            "domain": domain,
+            "brand_name": brand_name,
+            "keywords": keywords,
+            "overall_score": 0,
+            "overall_reasoning": f"Fehler bei der Analyse: {str(e)}",
+            "platforms": {},
+            "keyword_analysis": [],
+            "competitor_comparison": {},
+            "improvement_recommendations": [],
+            "error": str(e)
+        }
