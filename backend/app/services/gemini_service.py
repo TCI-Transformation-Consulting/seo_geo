@@ -699,7 +699,7 @@ Nenne die wichtigsten Anbieter und erkläre kurz, warum sie relevant sind."""
     except Exception:
         data = {}
     
-    # Check if company was mentioned
+    # Check if company was mentioned in competitive context
     mentioned = data.get("mentioned_companies", [])
     target_mentioned = data.get("target_company_mentioned", False)
     mention_type = data.get("mention_type", "none")
@@ -713,18 +713,50 @@ Nenne die wichtigsten Anbieter und erkläre kurz, warum sie relevant sind."""
                 mention_type = "explicit"
                 break
     
+    # IMPROVED SCORING: Combine direct knowledge + competitive mention
     score = 0
-    if mention_type == "explicit":
-        score = 2
-    elif mention_type == "indirect":
-        score = 1
+    knowledge_level = "unknown"
+    
+    if is_known and confidence == "high":
+        # LLM knows the company directly
+        if mention_type == "explicit":
+            score = 2  # Known + mentioned as leader = 100%
+            knowledge_level = "well_known"
+        else:
+            score = 1.5  # Known but not top-of-mind = 75%
+            knowledge_level = "known"
+    elif is_known and confidence == "low":
+        # LLM has some knowledge but unsure
+        if mention_type == "explicit":
+            score = 1.5  # Unsure but mentioned = 75%
+            knowledge_level = "known"
+        else:
+            score = 0.5  # Vaguely known = 25%
+            knowledge_level = "vaguely_known"
+    elif not is_known:
+        # LLM doesn't know the company directly
+        if mention_type == "explicit":
+            score = 1  # Not known but mentioned (might be in context) = 50%
+            knowledge_level = "contextually_known"
+        else:
+            score = 0  # Not known at all = 0%
+            knowledge_level = "unknown"
     
     return {
-        "recalled": target_mentioned,
-        "mention_type": mention_type,
+        "recalled": target_mentioned or is_known,
+        "knowledge_level": knowledge_level,
+        "direct_knowledge": {
+            "known": is_known,
+            "confidence": confidence,
+            "description": direct_data.get("description") if is_known else None
+        },
+        "competitive_mention": {
+            "mentioned": target_mentioned,
+            "mention_type": mention_type,
+            "context": data.get("context", "")
+        },
         "score": score,
         "max_score": 2,
-        "context": data.get("context", ""),
         "competitors_mentioned": [m for m in mentioned if isinstance(m, str)],
         "reasoning": data.get("reasoning", ""),
         "query_used": contents[:200]
