@@ -326,6 +326,169 @@ def extract_nap_json(markdown: str) -> Dict[str, Any]:
     return {"name": name, "address": address, "phone": phone, "email": email}
 
 
+def analyze_page_comprehensive(markdown: str, url: str) -> Dict[str, Any]:
+    """
+    Comprehensive LLM-based page analysis.
+    Scrape → LLM Parse → Structured Data
+    
+    This function performs a single LLM call to extract multiple data points:
+    - NAP (Name, Address, Phone, Email)
+    - SEO elements (Title, Description, H1)
+    - Content classification (Industry, Topic, Type)
+    - Schema recommendations
+    - Key entities and keywords
+    
+    Returns a structured dict with all extracted information.
+    """
+    client = _get_client()
+    
+    # Limit content size
+    if len(markdown) > 30000:
+        markdown = markdown[:30000]
+    
+    system_instruction = """Du bist ein Website-Analyse-Experte. Analysiere den gegebenen Website-Inhalt und extrahiere strukturierte Informationen.
+
+Antworte NUR als JSON-Objekt mit folgender Struktur:
+{
+  "business": {
+    "name": "Firmenname oder null",
+    "legalForm": "GmbH, UG, AG, etc. oder null",
+    "address": "Vollständige Adresse oder null",
+    "phone": "Telefonnummer oder null",
+    "email": "E-Mail-Adresse oder null",
+    "website": "Website-URL",
+    "foundOnPage": "Wo wurden die Infos gefunden (z.B. Impressum, Footer, Kontakt)"
+  },
+  "seo": {
+    "title": "Seitentitel",
+    "description": "Meta-Description oder Zusammenfassung",
+    "h1": ["Liste der H1-Überschriften"],
+    "h1Assessment": "gut/verbesserungswürdig/fehlt - mit Begründung",
+    "keyMessages": ["Die 3-5 wichtigsten Botschaften der Seite"]
+  },
+  "content": {
+    "primaryTopic": "Hauptthema der Seite",
+    "secondaryTopics": ["Weitere Themen"],
+    "industry": "Branche (z.B. Agentur, E-Commerce, Software, etc.)",
+    "contentType": "Art des Inhalts (Unternehmensseite, Blog, Shop, etc.)",
+    "targetAudience": "Zielgruppe",
+    "tone": "Tonalität (professionell, locker, technisch, etc.)",
+    "language": "Sprache der Seite"
+  },
+  "entities": {
+    "people": [{"name": "Name", "role": "Rolle/Position"}],
+    "organizations": ["Genannte Unternehmen/Organisationen"],
+    "locations": ["Genannte Orte"],
+    "products": ["Genannte Produkte/Services"],
+    "keywords": ["Die 10 wichtigsten Keywords"]
+  },
+  "schema": {
+    "detected": ["Erkannte Schema-Typen aus dem Content"],
+    "recommended": ["Empfohlene Schema-Typen basierend auf dem Content"],
+    "reasoning": "Begründung für die Empfehlungen"
+  },
+  "credibility": {
+    "hasImpressum": true/false,
+    "hasContact": true/false,
+    "hasSocialProof": true/false,
+    "trustSignals": ["Gefundene Vertrauenssignale"],
+    "score": 0-100
+  },
+  "contentQuality": {
+    "hasUniqueContent": true/false,
+    "hasFAQ": true/false,
+    "hasPricing": true/false,
+    "hasTestimonials": true/false,
+    "missingElements": ["Fehlende wichtige Elemente"],
+    "score": 0-100
+  }
+}
+
+Wichtig:
+- Extrahiere nur Informationen, die tatsächlich im Text vorkommen
+- Setze fehlende Felder auf null oder leere Arrays
+- Sei präzise und faktisch
+- Achte besonders auf Impressum, Kontakt und Footer-Bereiche für NAP-Daten"""
+
+    contents = f"""Analysiere diese Website:
+URL: {url}
+
+WEBSITE-INHALT:
+{markdown}
+
+Extrahiere alle strukturierten Informationen gemäß dem Schema."""
+
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=contents,
+        config={
+            "system_instruction": system_instruction,
+            "response_mime_type": "application/json",
+        },
+    )
+
+    raw = response.text or "{}"
+    try:
+        data = json.loads(raw)
+    except Exception:
+        data = {}
+    
+    return data if isinstance(data, dict) else {}
+
+
+def validate_extracted_data(original_markdown: str, extracted_data: Dict[str, Any], data_type: str) -> Dict[str, Any]:
+    """
+    Validation LLM call to verify extracted data is correct.
+    
+    Args:
+        original_markdown: The source content
+        extracted_data: The data that was extracted
+        data_type: Type of data being validated (e.g., "NAP", "SEO", "Content")
+    
+    Returns:
+        {"valid": bool, "corrections": {...}, "confidence": float, "reasoning": str}
+    """
+    client = _get_client()
+    
+    # Limit content
+    if len(original_markdown) > 15000:
+        original_markdown = original_markdown[:15000]
+    
+    system_instruction = f"""Du bist ein Qualitätsprüfer für extrahierte Website-Daten.
+Prüfe ob die extrahierten {data_type}-Daten korrekt sind.
+
+Antworte NUR als JSON:
+{{
+  "valid": true/false,
+  "corrections": {{}},  // Korrekturen falls nötig
+  "confidence": 0.0-1.0,
+  "reasoning": "Begründung"
+}}"""
+
+    contents = f"""EXTRAHIERTE DATEN ({data_type}):
+{json.dumps(extracted_data, ensure_ascii=False, indent=2)}
+
+ORIGINAL-INHALT:
+{original_markdown}
+
+Sind die extrahierten Daten korrekt? Gibt es Fehler oder fehlende Informationen?"""
+
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=contents,
+        config={
+            "system_instruction": system_instruction,
+            "response_mime_type": "application/json",
+        },
+    )
+
+    raw = response.text or "{}"
+    try:
+        return json.loads(raw)
+    except Exception:
+        return {"valid": True, "corrections": {}, "confidence": 0.5, "reasoning": "Validation failed"}
+
+
 def fact_check_claim(claim: str, context_markdown: str) -> Dict[str, Any]:
     """
     Fact-check a single claim against the provided markdown context.
