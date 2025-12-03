@@ -297,6 +297,7 @@ class CompetitorSearchRequest(BaseModel):
     domain: HttpUrl = Field(..., description="The domain to find competitors for")
     query: str = Field(..., description="Search context/topic for finding competitors")
     max_results: int = Field(10, description="Maximum number of competitors to return")
+    company_profile: dict | None = Field(None, description="Company profile for better matching")
 
 
 class CompetitorResult(BaseModel):
