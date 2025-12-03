@@ -1,219 +1,299 @@
+# NEURO-WEB | AI Readiness Platform
+
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+<img src="https://img.shields.io/badge/GEO-SEO%20AI-6366F1?style=for-the-badge" alt="GEO/SEO AI" />
+<img src="https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=next.js" alt="Next.js 14" />
+<img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+<img src="https://img.shields.io/badge/Crawl4AI-Scraping-00A67E?style=for-the-badge" alt="Crawl4AI" />
+<img src="https://img.shields.io/badge/Gemini-AI-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini AI" />
 </div>
 
-# Neuro-Web (GEO/SEO AI) – Überblick und Bedienung
+## Overview
 
-Diese Lösung kombiniert ein React-Frontend mit einem FastAPI-Backend, um Webseiten-Inhalte per Firecrawl zu erfassen und mit Googles Gemini-Modellen zu analysieren, zu bewerten und Artefakte (z. B. JSON-LD, OpenAPI, RSS, robots.txt, sitemap.xml, MCP-Config, AI Manifest) zu generieren. Zusätzlich bietet sie Monitoring (Halluzinations-Detektion) und einfache Agent-Workflows.
+**NEURO-WEB** is an AI Readiness Platform that helps businesses optimize their web presence for AI systems like ChatGPT, Gemini, Perplexity, and other LLM-based search/answer engines. It performs comprehensive audits combining traditional SEO checks with modern **GEO (Generative Engine Optimization)** analysis.
 
-Frontend: Vite + React + TypeScript  
-Backend: FastAPI (Python) + google-genai SDK + Firecrawl
+## Features & Functionalities
 
-Live-Ansicht der ursprünglichen AI Studio App (historisch):  
-https://ai.studio/apps/drive/1bsPj4sW9k_CVbE6fOmSueCa8I-UB1P__
+### 1. Website Scanning & Analysis
 
-## Features
+#### Initial Scan (`/api/v1/initial-scan`)
+Performs a comprehensive scan of any website and checks:
 
-- Content
-  - Content Chunks: Extrahiert H2-Fragen und kurze Antworten aus einer Seite
-  - Content Questions: Extrahiert implizite Nutzerfragen aus einer oder mehreren Seiten
-- Analysis
-  - NAP Audit: Name/Address/Phone aus einer Seite extrahieren
-  - Semantic Coverage (Gap-Analyse): Eigene Seite vs. Wettbewerber (Top-N Seiten) vergleichen
-  - Fact Check: Behauptung gegen kontextuelle Seiten prüfen
-- Generation
-  - JSON-LD (Schema.org) für Organization, Product, FAQ, HowTo, Article
-  - OpenAPI 3.1 (YAML) aus Docs/Markdown ableiten
-  - RSS (XML), robots.txt (Plaintext), sitemap.xml (XML)
-  - MCP-Server-Konfiguration (JSON), AI Manifest (JSON)
-- Monitoring
-  - Hallucination Detect: Generierten Text gegen Marken-/Seitenkontext prüfen
-- Agents
-  - Einfache Agent-Runner-Demo, die Firecrawl nutzt (Scans/Extrakte und kurze Zusammenfassungen)
+**SEO Checks:**
+- Title tag (presence, length optimization)
+- Meta description (presence, character count)
+- H1 heading analysis (count, multiple H1 detection)
+- Meta tag density
+- Canonical URL detection
+- NoIndex/NoArchive directives
 
-Hinweis: Das UI entfernt automatisch Code-Fences (```yaml, ```xml, ```json) in Generierungsergebnissen, um die Inhalte sauber anzuzeigen.
+**GEO Artifact Detection:**
+| Artifact | Description | Status Check |
+|----------|-------------|--------------|
+| `robots.txt` | Crawler control file | ✅ Found/Not Found + AI directives |
+| `sitemap.xml` | Site structure map | ✅ Found + URL count |
+| `RSS/Atom Feed` | Content syndication | ✅ Found + item count |
+| `llms.txt` | LLM access policies | ✅ Found (well-known paths) |
+| `ai-manifest.json` | AI integration manifest | ✅ Found |
+| `mcp.json` | MCP configuration | ✅ Found |
+| `openapi.json` | API specification | ✅ Found |
+| `JSON-LD Schema` | Structured data | ✅ Types detected + completeness |
 
-## Architektur
+**AI Crawler Detection:**
+- GPTBot, Anthropic-AI, PerplexityBot
+- Google-Extended, CCBot, BingBot
+- Custom AI crawler directives
 
-- Frontend (Vite/React/TS)
-  - Einstieg: `index.html`, `index.tsx`, App-Shell in `App.tsx`
-  - Views:
-    - `views/ProjectDetailView.tsx`: Enthält die Funktions-Tabs Content, Analysis, Monitoring, Generation, Agents
-    - `views/OptimizationView.tsx`: Simulator/Perception-Demo für HTML-Inhalte (unabhängig vom Backend)
-  - Services:
-    - `services/api.ts`: REST-Client für `/api/v1/...` Endpunkte
-    - `services/geminiService.ts`: Nur für Simulator-Demo (optional/entkoppelt vom Backend)
-- Backend (FastAPI)
-  - Einstieg: `backend/main.py`
-    - Lädt `.env` (Backend-Ordner hat Priorität), setzt Fallbacks aus `backend/config.py`
-    - Bindet API-Router `backend/app/api/endpoints.py`
-  - Endpunkte: `backend/app/api/endpoints.py`
-  - Services:
-    - `backend/app/services/firecrawl_service.py` (Crawl/Scrape via Firecrawl)
-    - `backend/app/services/gemini_service.py` (Analysetasks; Modelle: gemini-2.0-flash, gemini-2.5-pro)
-    - `backend/app/services/generation_service.py` (Artefakt-Generierung)
-    - `backend/app/services/monitoring_service.py` (Halluzinations-Detektion)
-  - Modelle/Schemas: `backend/app/models/schemas.py`
+### 2. AI-Powered Analysis (Gemini Integration)
 
-## Voraussetzungen
+#### Content Chunking (`/api/v1/content/chunks`)
+- Extracts key topics from webpage content
+- Returns Q&A format chunks (H2-style questions with concise answers)
+- Useful for FAQ generation and knowledge base building
 
-- Node.js 18+ (Frontend)
-- Python 3.10+ (Backend)
-- Google API Key (Gemini): GEMINI_API_KEY
-- Firecrawl API Key (optional, empfohlen): FIRECRAWL_API_KEY
+#### Question Extraction (`/api/v1/content/questions`)
+- Identifies implicit user questions from content
+- Clusters questions by topic
+- Helps identify content gaps
 
-## Installation
+#### Review Response Generation (`/api/v1/content/review-response`)
+- Generates professional, empathetic replies to customer reviews
+- Multilingual support (German/English)
+- Solution-oriented, concise responses
 
-1) Frontend-Abhängigkeiten installieren
-\`\`\`bash
-npm install
-\`\`\`
+#### Topic Recognition (`/api/v1/analysis/topic-recognition`)
+- Identifies primary and secondary topics
+- Industry classification
+- Keyword extraction
+- Entity recognition
+- Target audience detection
 
-2) Backend-Umgebung einrichten (empfohlenes venv)
-\`\`\`bash
-# Windows PowerShell (im Projektwurzelordner):
-python -m venv backend\.venv
-backend\.venv\Scripts\Activate.ps1
-pip install -r backend\requirements.txt
-\`\`\`
+#### Content Gap Analysis (`/api/v1/analysis/content-gap`)
+- Identifies missing core sections (Services, References, About, Pricing, Contact, FAQ, Blog)
+- Suggests missing questions that should be answered
+- Schema opportunities
+- Content score calculation
 
-3) Umgebungsvariablen setzen
-- Bevorzugt: `backend/.env` anlegen:
-\`\`\`
-GEMINI_API_KEY=your_gemini_key_here
-FIRECRAWL_API_KEY=fc-xxxxxxxxxxxxxxxx
-FRONTEND_ORIGIN=http://localhost:3000
-\`\`\`
-- Alternativ (Fallback): In `backend/config.py` sind Platzhalter vorhanden. `main.py` setzt diese Werte nur, wenn sie nicht bereits in der Umgebung existieren.
+#### Semantic Coverage Analysis (`/api/v1/analysis/semantic-coverage`)
+- Compares your content against competitors
+- Identifies topic gaps
+- Provides suggested H2 headlines and paragraph content
+- References competitor sources
 
-## Starten der Anwendung
+#### NAP Audit (`/api/v1/analysis/nap-audit`)
+- Extracts Name, Address, Phone (NAP) data
+- Validates business information consistency
+- Critical for local SEO and AI understanding
 
-- Backend (FastAPI, default Port 8000):
-\`\`\`bash
-# im Projektwurzelordner:
-backend\.venv\Scripts\Activate.ps1
-uvicorn backend.main:app --reload --port 8000
-\`\`\`
+#### Schema Audit (`/api/v1/analysis/schema-audit`)
+- Parses all JSON-LD on a page
+- Checks completeness for common types:
+  - Organization
+  - Product
+  - FAQPage
+  - Article
+  - LocalBusiness
+- Reports missing required/recommended fields
+- Google Rich Results eligibility check
 
-- Frontend (Vite, default Port 3000, fällt ggf. auf 3001 zurück):
-\`\`\`bash
-npm run dev
-# Ausgabe zeigt die URL, z. B. http://localhost:3000/ oder http://localhost:3001/
-\`\`\`
+#### Fact Checking (`/api/v1/analysis/fact-check`)
+- Verifies claims against provided context
+- Returns verdict: `true`, `false`, or `uncertain`
+- Provides evidence with citations
 
-CORS: `backend/main.py` erlaubt standardmäßig `http://localhost:3000` (und 127.0.0.1:3000). Wenn Vite einen Ausweich-Port (z. B. 3001) nutzt, können Sie `FRONTEND_ORIGIN` im Backend `.env` setzen.
+### 3. Monitoring & Quality Assurance
 
-## UI – Bedienung
+#### Hallucination Detection (`/api/v1/monitoring/hallucination-detect`)
+- Compares AI-generated text against brand content
+- Identifies potential factual errors
+- Helps maintain content accuracy
 
-- Landing: Scan starten (falls Backend nicht erreichbar, liefert das Frontend Mockdaten)
-- Dashboard: Übersicht über Projekte (Mock+Ad-hoc)
-- Project Detail:
-  - Content:
-    - Content Chunks: URL + max_chunks
-    - Content Questions: URL + max_items
-  - Analysis:
-    - Semantic Coverage: Eigene URL + Wettbewerber (CSV) + Top-N
-    - NAP Audit: URL
-    - Fact Check: Claim + Kontext-URLs (CSV)
-  - Monitoring:
-    - Hallucination Detect: Generierter Text + Brand URL
-  - Generation:
-    - JSON-LD / OpenAPI / RSS / robots.txt / sitemap.xml / MCP Config / AI Manifest
-    - Auswahl der URL und Schema-Typen (bei JSON-LD)
-  - Agents:
-    - Agent-Ziel, URLs (CSV), Domain Allowlist (CSV), max calls – ruft Firecrawl-Tools auf und fasst zusammen
+### 4. Competitor Analysis
 
-## REST API (Kurzreferenz)
+#### Grounded Competitor Search (`/api/v1/analysis/competitor-search`)
+- Uses Gemini with Google Search grounding
+- Finds direct competitors based on domain/topic
+- Returns competitor URLs, descriptions, relevance scores
+- Fallback to DuckDuckGo/Bing SERP
 
-Basis: `http://localhost:8000/api/v1`
+#### Grounded Competitor Analysis (`/api/v1/analysis/grounded-competitor-analysis`)
+- Comprehensive market analysis with real-time web data
+- Analyzes competitor strengths/weaknesses
+- Identifies market trends
+- Content strategy insights
+- Inline citations from sources
 
-- GET `/health` – Service-Status
-- GET `/debug/gemini` – Testet GEMINI_API_KEY + Minimalaufruf (nur in Dev; vor Prod entfernen)
-- POST `/scan` – (Demo) Seiten-Scan (siehe `services/crawler_service.py`)
-- Content:
-  - POST `/content/chunks` { url, max_chunks }
-  - POST `/content/questions` { url | urls[], max_items }
-  - POST `/content/review-response` { review_text }
-- Analysis:
-  - POST `/analysis/nap-audit` { url }
-  - POST `/analysis/semantic-coverage` { my_url, competitors[], top_n }
-  - POST `/analysis/fact-check` { claim, context_urls[] }
-  - POST `/monitoring/hallucination-detect` { generated_text, brand_url }
-- Generation:
-  - POST `/generation/jsonld` { url, schema_type }
-  - POST `/generation/openapi` { url }
-  - POST `/generation/rss` { url }
-  - POST `/generation/robots` { url }
-  - POST `/generation/sitemap` { url }
-  - POST `/generation/mcp-config` { url }
-  - POST `/generation/ai-manifest` { url }
-- Agents:
-  - POST `/agents/runner` { goal, urls[], constraints? }
+### 5. Artifact Generation
 
-Antworten sind JSON. Für einige Generatoren wird der erzeugte Inhalt als String im JSON geliefert.
+#### JSON-LD Schema Generation (`/api/v1/generation/jsonld`)
+- Generates valid Schema.org JSON-LD
+- Supported types: Organization, Product, FAQ, HowTo, Article
+- Uses page content for accurate data
 
-## Modelle und SDKs
+#### OpenAPI Specification (`/api/v1/generation/openapi`)
+- Generates OpenAPI spec from page content
+- Useful for API documentation
 
-- Google GenAI (SDK: `google-genai`)
-  - Schnelle Textgenerierung: `gemini-2.0-flash`
-  - Analytische Aufgaben (Gap-Analyse, Fact Check, Hallu): `gemini-2.5-pro`
-  - Alle Aufrufe über `client.models.generate_content(model=..., contents=..., config=...)` mit
-    - `system_instruction`
-    - `response_mime_type` (z. B. `application/json`, `text/plain`)
-- Firecrawl
-  - Zum Scrapen/Crawlen von Seiten (Markdown-Extraktion); erfordert `FIRECRAWL_API_KEY`
+#### RSS Feed Generation (`/api/v1/generation/rss`)
+- Creates RSS feed from content
+- Enables content syndication
 
-## Troubleshooting
+#### robots.txt Generation (`/api/v1/generation/robots`)
+- Generates optimized robots.txt
+- Includes AI crawler directives
 
-- Fehler 400 (Ungültige Anforderung) bei Endpunkten:
-  - Prüfen, ob die erwarteten Felder korrekt benannt sind (siehe Schemas in `backend/app/models/schemas.py`).
-- Fehler 502 (Bad Gateway) beim Generieren (vorher):
-  - Modelle/SDK-Signatur aktualisiert. Stellen Sie sicher, dass `google-genai` installiert und `GEMINI_API_KEY` gesetzt ist.
-- Umlaute/Mojibake in PowerShell:
-  - Konsole kann bei UTF-8 problematisch sein. Die API liefert korrektes UTF-8; UI zeigt es korrekt an.
-- Kein Firecrawl-Schlüssel:
-  - Funktionen, die Crawling/Scraping benötigen, schlagen fehl. Setzen Sie `FIRECRAWL_API_KEY`.
+#### Sitemap Generation (`/api/v1/generation/sitemap`)
+- Creates XML sitemap
+- Improves discovery by search engines and AI
 
-## Sicherheit und Produktion
+#### MCP Config Generation (`/api/v1/generation/mcp-config`)
+- Generates MCP (Model Context Protocol) configuration
+- Enables AI agent integration
 
-- Geheimnisse nie committen. Nutzen Sie `.env` und Deployment-Secret-Manager.
-- Debug-Endpunkte (`/debug/gemini`, temporär: `/debug/review-client`, `/debug/hallu-stack`) sind nur für die Entwicklung – vor Produktion entfernen.
-- Produktion:
-  - Backend mit `uvicorn`/`gunicorn` hinter Reverse Proxy (Nginx/Caddy)
-  - Frontend statisch bauen und ausliefern:
-    \`\`\`bash
-    npm run build
-    \`\`\`
-    Das `dist/` Verzeichnis kann über jeden Webserver bereitgestellt werden.
-- CORS so einschränken, dass nur die echte Frontend-Domain erlaubt ist.
+#### AI Manifest Generation (`/api/v1/generation/ai-manifest`)
+- Creates ai-manifest.json
+- Describes AI integration capabilities
 
-## Lokaler Schnelltest (PowerShell)
+### 6. Site-Wide Operations
 
-\`\`\`powershell
-# Backend muss auf :8000 laufen
-Invoke-RestMethod -Uri "http://localhost:8000/api/v1/health" -Method GET
+#### URL Enumeration (`/api/v1/site/urls`)
+- Discovers all URLs for a domain
+- Uses sitemap.xml (including nested indexes)
+- Fallback to Crawl4AI crawling
 
-# Debug Gemini (nur Dev)
-Invoke-RestMethod -Uri "http://localhost:8000/api/v1/debug/gemini" -Method GET
+#### Batch Scanning (`/api/v1/scan/batch`)
+- Processes multiple pages
+- Content chunking across pages
+- NAP extraction from multiple sources
 
-# Content Chunks
-$body = @{ url = "https://www.neuewerte.de/"; max_chunks = 4 } | ConvertTo-Json -Compress
-Invoke-RestMethod -Uri "http://localhost:8000/api/v1/content/chunks" -Method POST -ContentType "application/json" -Body $body
-\`\`\`
+### 7. AI Agent Runner
 
-## Projektstruktur (Auszug)
+#### Agent Runner (`/api/v1/agents/runner`)
+- Executes goal-oriented web scraping tasks
+- Constraint-based execution
+- Tool calls with output summaries
 
-- Frontend:
-  - `App.tsx`, `index.tsx`, `index.html`
-  - `views/ProjectDetailView.tsx`, `views/OptimizationView.tsx`
-  - `services/api.ts`
-- Backend:
-  - `backend/main.py`, `backend/config.py`, `backend/.env.example`
-  - `backend/app/api/endpoints.py`
-  - `backend/app/services/*` (gemini_service, generation_service, firecrawl_service, monitoring_service, agents_service)
-  - `backend/app/models/schemas.py`
-  - `backend/requirements.txt`
+## Scoring System
 
-## Lizenz
+The platform calculates an **AI Readiness Score** (0-100) based on:
 
-Interne Projektbasis. Lizenzierung nach Absprache.
+1. **Structure Score** - HTML structure, headings, semantic markup
+2. **Structured Data Score** - JSON-LD presence and completeness
+3. **Content Score** - Quality and comprehensiveness
+4. **Technical Score** - robots.txt, sitemap, canonical URLs
+5. **GEO Artifact Score** - AI-specific files (llms.txt, ai-manifest, mcp.json)
+
+## Issue Classification
+
+| Severity | Description |
+|----------|-------------|
+| **Critical** | Must-fix issues blocking AI visibility |
+| **Warning** | Important issues affecting discoverability |
+| **Suggestion** | Optimization opportunities |
+
+## Tech Stack
+
+- **Frontend**: Next.js 14, React 18, Tailwind CSS, Radix UI
+- **Backend**: FastAPI (Python), Pydantic
+- **AI**: Google Gemini (gemini-2.0-flash, gemini-2.5-pro, gemini-2.5-flash)
+- **Web Scraping**: Crawl4AI (v0.7.x)
+- **Parsing**: BeautifulSoup, HTTPX
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.11+
+- Node.js 18+
+- Gemini API Key
+
+### Setup
+
+1. **Backend Setup**
+```bash
+cd backend
+pip install -r requirements.txt
+crawl4ai-setup  # Install browser dependencies
+```
+
+2. **Configure Environment**
+```bash
+# backend/.env
+GEMINI_API_KEY=your_gemini_api_key
+AUTH_SECRET=your_secret_key
+```
+
+3. **Frontend Setup**
+```bash
+cd frontend
+yarn install
+```
+
+4. **Run Services**
+```bash
+# Backend
+cd backend && uvicorn server:app --host 0.0.0.0 --port 8001
+
+# Frontend
+cd frontend && yarn dev
+```
+
+## Default Login Credentials
+
+| Email | Password |
+|-------|----------|
+| mw@neuewerte.de | testuser123 |
+| db@neuewerte.de | testuser123 |
+| oleg.seifert@tci-partners.com | testuser123 |
+
+## API Endpoints Summary
+
+| Category | Endpoint | Method | Description |
+|----------|----------|--------|-------------|
+| **Health** | `/api/v1/health` | GET | Service health check |
+| **Scanning** | `/api/v1/scan` | POST | Full site scan |
+| | `/api/v1/initial-scan` | POST | Quick initial scan |
+| | `/api/v1/scan/batch` | POST | Batch page processing |
+| **Content** | `/api/v1/content/chunks` | POST | Extract content chunks |
+| | `/api/v1/content/questions` | POST | Extract user questions |
+| | `/api/v1/content/review-response` | POST | Generate review reply |
+| **Analysis** | `/api/v1/analysis/topic-recognition` | POST | Topic & keyword analysis |
+| | `/api/v1/analysis/content-gap` | POST | Content gap analysis |
+| | `/api/v1/analysis/semantic-coverage` | POST | Semantic coverage vs competitors |
+| | `/api/v1/analysis/nap-audit` | POST | NAP extraction |
+| | `/api/v1/analysis/schema-audit` | POST | Schema.org audit |
+| | `/api/v1/analysis/fact-check` | POST | Fact verification |
+| | `/api/v1/analysis/competitor-search` | POST | Find competitors |
+| | `/api/v1/analysis/grounded-competitor-analysis` | POST | Deep competitor analysis |
+| **Monitoring** | `/api/v1/monitoring/hallucination-detect` | POST | AI hallucination check |
+| **Generation** | `/api/v1/generation/jsonld` | POST | Generate JSON-LD |
+| | `/api/v1/generation/openapi` | POST | Generate OpenAPI spec |
+| | `/api/v1/generation/rss` | POST | Generate RSS feed |
+| | `/api/v1/generation/robots` | POST | Generate robots.txt |
+| | `/api/v1/generation/sitemap` | POST | Generate sitemap.xml |
+| | `/api/v1/generation/mcp-config` | POST | Generate MCP config |
+| | `/api/v1/generation/ai-manifest` | POST | Generate AI manifest |
+| **Site** | `/api/v1/site/urls` | POST | Enumerate site URLs |
+| **Agents** | `/api/v1/agents/runner` | POST | Run AI agent task |
+
+## GEO Artifacts Explained
+
+### llms.txt
+A text file at `/.well-known/llms.txt` that guides LLM access and usage policies for your website.
+
+### ai-manifest.json
+A JSON file describing your site's AI integration capabilities, data access policies, and machine-readable metadata.
+
+### mcp.json
+Model Context Protocol configuration file exposing tools and endpoints that AI agents can consume.
+
+### OpenAPI Specification
+Standard API documentation that AI systems can parse to understand available endpoints and data structures.
+
+## License
+
+Proprietary - All rights reserved.
+
+## Support
+
+For support and inquiries, contact the development team.
