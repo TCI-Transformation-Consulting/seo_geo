@@ -735,41 +735,20 @@ function AIAnalysisSection({ analysis }: { analysis: AIAnalysis }) {
                 <p className="text-sm text-slate-200">{analysis.aiVisibility.summary}</p>
               </div>
 
-              {/* Breakdown: Ungrounded + Grounded */}
-              <div className="grid md:grid-cols-2 gap-4">
-                {/* Ungrounded Recall */}
-                <div className="p-4 bg-slate-900/50 rounded-lg border border-slate-700">
-                  <h4 className="text-xs font-medium text-slate-400 uppercase mb-2 flex items-center gap-2">
-                    <Brain className="w-4 h-4" />
-                    Ungrounded Recall (40%)
-                  </h4>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className={`text-2xl font-bold ${analysis.aiVisibility.ungroundedScore === 0 ? "text-red-400" : "text-white"}`}>
-                      {analysis.aiVisibility.ungroundedScore}/100
-                    </div>
-                  </div>
-                  <p className="text-xs text-slate-400 mb-2">
-                    How well AI remembers your brand without being given your website content.
-                  </p>
-                  {analysis.aiVisibility.ungroundedScore === 0 && (
-                    <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded text-xs text-amber-300">
-                      <strong>⚠️ Brand not in AI training data.</strong> Increase visibility through PR, publications, and online presence.
-                    </div>
-                  )}
+              {/* Quick Summary: Weights shown */}
+              <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-slate-300">Score Calculation:</span>
+                  <span className="text-sm font-medium text-indigo-300">
+                    (40% × Ungrounded) + (60% × Grounded)
+                  </span>
                 </div>
-
-                {/* Grounded Answerability */}
-                <div className="p-4 bg-slate-900/50 rounded-lg border border-slate-700">
-                  <h4 className="text-xs font-medium text-slate-400 uppercase mb-2 flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Grounded Answerability (60%)
-                  </h4>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="text-2xl font-bold text-white">{analysis.aiVisibility.groundedPercentage}%</div>
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Percentage of user questions the AI can answer using your website content.
-                  </p>
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span>Ungrounded: {analysis.aiVisibility.ungroundedScore}/100</span>
+                  <span>•</span>
+                  <span>Grounded: {analysis.aiVisibility.groundedPercentage}%</span>
+                  <span>•</span>
+                  <span className="font-bold text-white">Total: {analysis.aiVisibility.totalScore}/100</span>
                 </div>
               </div>
 
