@@ -325,3 +325,52 @@ class URLListResponse(BaseModel):
     count: int
     urls: List[str]
     source: Literal["sitemap", "crawl", "mixed"]
+
+
+# AI Visibility Analysis
+class AIVisibilityRequest(BaseModel):
+    url: HttpUrl = Field(..., description="The website URL to analyze")
+    brand_name: str = Field(..., description="The brand/company name")
+    keywords: List[str] = Field(..., description="Keywords to test visibility for")
+    competitors: List[str] = Field(default=[], description="Optional list of competitor domains")
+
+
+class PlatformVisibility(BaseModel):
+    score: int = Field(..., description="0=not mentioned, 1=peripherally mentioned, 2=primarily recommended")
+    reasoning: str = Field(..., description="Explanation for the visibility score")
+    would_mention: bool = Field(default=False)
+    mention_context: str = Field(default="")
+
+
+class KeywordVisibility(BaseModel):
+    keyword: str
+    visibility_score: int
+    reasoning: str
+    improvement_suggestions: List[str] = []
+
+
+class CompetitorComparison(BaseModel):
+    our_position: str = Field(default="unknown")
+    reasoning: str = Field(default="")
+    competitors_ahead: List[str] = []
+    competitors_behind: List[str] = []
+
+
+class ImprovementRecommendation(BaseModel):
+    priority: str
+    action: str
+    expected_impact: str
+    reasoning: str
+
+
+class AIVisibilityResponse(BaseModel):
+    domain: str
+    brand_name: str
+    keywords: List[str]
+    overall_score: int = Field(..., description="Overall visibility score 0-100")
+    overall_reasoning: str = Field(..., description="Summary of visibility analysis with reasoning")
+    platforms: Dict[str, Any] = Field(default={}, description="Per-platform visibility scores with reasoning")
+    keyword_analysis: List[Dict[str, Any]] = []
+    competitor_comparison: Dict[str, Any] = {}
+    improvement_recommendations: List[Dict[str, Any]] = []
+    error: Optional[str] = None
