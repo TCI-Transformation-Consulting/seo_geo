@@ -699,6 +699,157 @@ function AIAnalysisSection({ analysis }: { analysis: AIAnalysis }) {
         )}
       </div>
 
+      {/* AI Visibility Framework */}
+      {analysis.aiVisibility && (
+        <div className="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
+          <button
+            onClick={() => toggleSection("ai-visibility")}
+            className="w-full p-4 flex items-center justify-between hover:bg-slate-700/50 transition"
+          >
+            <div className="flex items-center gap-3">
+              <Eye className="w-5 h-5 text-indigo-400" />
+              <span className="font-medium">AI Visibility Score</span>
+              <span
+                className={`px-3 py-1 text-sm font-bold rounded-full ${
+                  analysis.aiVisibility.grade === "A"
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : analysis.aiVisibility.grade === "B"
+                      ? "bg-blue-500/20 text-blue-400"
+                      : analysis.aiVisibility.grade === "C"
+                        ? "bg-amber-500/20 text-amber-400"
+                        : analysis.aiVisibility.grade === "D"
+                          ? "bg-orange-500/20 text-orange-400"
+                          : "bg-red-500/20 text-red-400"
+                }`}
+              >
+                {analysis.aiVisibility.totalScore}/100 (Grade {analysis.aiVisibility.grade})
+              </span>
+            </div>
+            {expandedSections.has("ai-visibility") ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+          {expandedSections.has("ai-visibility") && (
+            <div className="p-4 pt-0 border-t border-slate-700 space-y-4">
+              {/* Summary */}
+              <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+                <p className="text-sm text-slate-200">{analysis.aiVisibility.summary}</p>
+              </div>
+
+              {/* Breakdown: Ungrounded + Grounded */}
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* Ungrounded Recall */}
+                <div className="p-4 bg-slate-900/50 rounded-lg border border-slate-700">
+                  <h4 className="text-xs font-medium text-slate-400 uppercase mb-2 flex items-center gap-2">
+                    <Brain className="w-4 h-4" />
+                    Ungrounded Recall (40%)
+                  </h4>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="text-2xl font-bold text-white">{analysis.aiVisibility.ungroundedScore}/100</div>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    How well AI remembers your brand without being given your website content.
+                  </p>
+                </div>
+
+                {/* Grounded Answerability */}
+                <div className="p-4 bg-slate-900/50 rounded-lg border border-slate-700">
+                  <h4 className="text-xs font-medium text-slate-400 uppercase mb-2 flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Grounded Answerability (60%)
+                  </h4>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="text-2xl font-bold text-white">{analysis.aiVisibility.groundedPercentage}%</div>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Percentage of user questions the AI can answer using your website content.
+                  </p>
+                </div>
+              </div>
+
+              {/* Priority Actions */}
+              {analysis.aiVisibility.priorityActions?.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-medium text-amber-400 uppercase mb-2 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    Priority Actions
+                  </h4>
+                  <ul className="space-y-2">
+                    {analysis.aiVisibility.priorityActions.map((action, i) => (
+                      <li key={i} className="text-sm text-slate-300 flex items-start gap-2 p-2 bg-amber-500/10 rounded">
+                        <span className="text-amber-400 mt-0.5">→</span>
+                        {action}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Content Gaps */}
+              {analysis.aiVisibility.contentGaps?.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-medium text-red-400 uppercase mb-2 flex items-center gap-2">
+                    <XCircle className="w-4 h-4" />
+                    Content Gaps Detected
+                  </h4>
+                  <ul className="space-y-1">
+                    {analysis.aiVisibility.contentGaps.map((gap, i) => (
+                      <li key={i} className="text-sm text-slate-300 flex items-start gap-2">
+                        <XCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                        {gap}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Question-Level Results */}
+              {analysis.aiVisibility.groundedResults?.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-medium text-slate-400 uppercase mb-3 flex items-center gap-2">
+                    <MessageCircleQuestion className="w-4 h-4" />
+                    Question-Level Analysis ({analysis.aiVisibility.groundedResults.length} questions tested)
+                  </h4>
+                  <div className="space-y-2">
+                    {analysis.aiVisibility.groundedResults.map((result, i) => (
+                      <div
+                        key={i}
+                        className={`p-3 rounded-lg border ${
+                          result.found_in_content
+                            ? "bg-emerald-500/10 border-emerald-500/20"
+                            : "bg-red-500/10 border-red-500/20"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <p className="text-sm font-medium text-white flex-1">Q: {result.question}</p>
+                          {result.found_in_content ? (
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                          ) : (
+                            <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 mb-1">
+                          <strong>Answer:</strong> {result.answer}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs">
+                          <span
+                            className={
+                              result.found_in_content ? "text-emerald-400" : "text-red-400"
+                            }
+                          >
+                            {result.found_in_content ? "✓ Found in content" : "✗ Not found in content"}
+                          </span>
+                          <span className="text-slate-500">•</span>
+                          <span className="text-slate-400">Confidence: {result.confidence}%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* User Questions */}
       {analysis.userQuestions?.length > 0 && (
         <div className="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden">
