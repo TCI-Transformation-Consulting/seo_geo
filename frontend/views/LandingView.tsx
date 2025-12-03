@@ -372,8 +372,12 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-50 font-sans animate-fade-in">
-      <div className="relative overflow-hidden border-b border-slate-800">
+    <div className="min-h-screen text-slate-50 font-sans animate-fade-in relative">
+      {/* Background gradient */}
+      <div className="gradient-bg" />
+      
+      {/* Hero Section */}
+      <div className="relative overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500 rounded-full blur-[128px]" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-500 rounded-full blur-[128px]" />
@@ -389,11 +393,11 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="max-w-4xl mx-auto px-6 py-12 relative z-10">
         {/* Step 1: URL Input */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center font-bold">1</div>
+            <div className="w-8 h-8 rounded-full glass-button flex items-center justify-center font-bold text-sm">1</div>
             <h2 className="text-xl font-bold">Enter your website URL</h2>
           </div>
           <div className="relative">
@@ -404,7 +408,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               disabled={isLoading}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all disabled:opacity-50"
+              className="w-full glass-input rounded-xl py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none disabled:opacity-50"
             />
           </div>
         </div>
@@ -412,7 +416,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
         {/* Step 2: Package Selection */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center font-bold">2</div>
+            <div className="w-8 h-8 rounded-full glass-button flex items-center justify-center font-bold text-sm">2</div>
             <h2 className="text-xl font-bold">Select analysis package</h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -421,15 +425,15 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
                 key={pkg.id}
                 onClick={() => setSelectedPackage(pkg.id as PackagePresetId)}
                 disabled={isLoading}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${
+                className={`p-4 rounded-xl text-left transition-all relative ${
                   selectedPackage === pkg.id
-                    ? "border-indigo-500 bg-indigo-500/10"
-                    : "border-slate-700 bg-slate-800/50 hover:border-slate-600"
+                    ? "glass-list-item-active"
+                    : "glass-card hover:border-indigo-500/30"
                 } disabled:opacity-50`}
               >
                 <div
                   className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${
-                    selectedPackage === pkg.id ? "bg-indigo-500/20 text-indigo-400" : "bg-slate-700 text-slate-400"
+                    selectedPackage === pkg.id ? "bg-indigo-500/20 text-indigo-400" : "bg-white/5 text-slate-400"
                   }`}
                 >
                   <PackageIcon id={pkg.id} />
@@ -437,10 +441,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
                 <h3 className="font-bold text-white text-sm mb-1">{pkg.name}</h3>
                 <p className="text-xs text-slate-500 mb-2">{pkg.estimatedTime}</p>
                 <div className="flex gap-2 text-xs">
-                  <span className="bg-slate-700 px-2 py-0.5 rounded text-slate-300">
+                  <span className="glass-badge px-2 py-0.5 rounded text-slate-300">
                     {pkg.analyses?.length || 0} checks
                   </span>
-                  <span className="bg-slate-700 px-2 py-0.5 rounded text-slate-300">
+                  <span className="glass-badge px-2 py-0.5 rounded text-slate-300">
                     {pkg.generations?.length || 0} files
                   </span>
                 </div>
@@ -455,7 +459,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
         {/* Step 3: Analysis scope */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center font-bold">3</div>
+            <div className="w-8 h-8 rounded-full glass-button flex items-center justify-center font-bold text-sm">3</div>
             <h2 className="text-xl font-bold">Choose analysis scope</h2>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -463,56 +467,56 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
               type="button"
               onClick={() => setDepthMode("quick")}
               disabled={isLoading}
-              className={`px-4 py-2 rounded-lg border text-sm ${
+              className={`px-4 py-2 rounded-lg text-sm transition-all ${
                 depthMode === "quick"
-                  ? "border-indigo-500 bg-indigo-500/10 text-white"
-                  : "border-slate-700 bg-slate-800/50 text-slate-300 hover:border-slate-600"
+                  ? "glass-list-item-active text-white"
+                  : "glass-card text-slate-300 hover:border-indigo-500/30"
               }`}
               title="~10 Seiten, schneller Überblick"
             >
-              Quick (≈10 Seiten)
+              Quick (~10 pages)
             </button>
             <button
               type="button"
               onClick={() => setDepthMode("standard")}
               disabled={isLoading}
-              className={`px-4 py-2 rounded-lg border text-sm ${
+              className={`px-4 py-2 rounded-lg text-sm transition-all ${
                 depthMode === "standard"
-                  ? "border-indigo-500 bg-indigo-500/10 text-white"
-                  : "border-slate-700 bg-slate-800/50 text-slate-300 hover:border-slate-600"
+                  ? "glass-list-item-active text-white"
+                  : "glass-card text-slate-300 hover:border-indigo-500/30"
               }`}
               title="~40 Seiten, empfohlener Standard"
             >
-              Standard (≈40 Seiten) • default
+              Standard (~40 pages) - default
             </button>
             <button
               type="button"
               onClick={() => setDepthMode("full")}
               disabled={isLoading}
-              className={`px-4 py-2 rounded-lg border text-sm ${
+              className={`px-4 py-2 rounded-lg text-sm transition-all ${
                 depthMode === "full"
-                  ? "border-indigo-500 bg-indigo-500/10 text-white"
-                  : "border-slate-700 bg-slate-800/50 text-slate-300 hover:border-slate-600"
+                  ? "glass-list-item-active text-white"
+                  : "glass-card text-slate-300 hover:border-indigo-500/30"
               }`}
               title="Alle Seiten (kann länger dauern)"
             >
-              Full (alle Seiten)
+              Full (all pages)
             </button>
           </div>
           <p className="text-xs text-slate-500 mt-2">
-            Der Standardlauf analysiert ca. 40 Seiten. Du kannst bei Bedarf auf „Full“ wechseln, um die gesamte Site zu prüfen.
+            Standard run analyzes ~40 pages. Switch to "Full" to check the entire site.
           </p>
         </div>
 
         {/* Step 4: Run Analysis */}
-        <div className="bg-gradient-to-r from-indigo-500/10 to-emerald-500/10 border border-indigo-500/30 rounded-xl p-6">
+        <div className="glass-card p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center font-bold">4</div>
+            <div className="w-8 h-8 rounded-full glass-button flex items-center justify-center font-bold text-sm">4</div>
             <h2 className="text-xl font-bold">Run analysis</h2>
           </div>
 
           {error && (
-            <div className="mb-4 bg-rose-500/10 border border-rose-500/30 text-rose-300 p-4 rounded-lg flex items-center gap-3">
+            <div className="mb-4 glass-badge-error p-4 rounded-lg flex items-center gap-3">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <p>{error}</p>
             </div>
@@ -524,9 +528,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
                 <span className="text-sm text-slate-400">{scanStatus}</span>
                 <span className="text-sm text-indigo-400 font-medium">{scanProgress}%</span>
               </div>
-              <div className="w-full bg-slate-700 rounded-full h-2">
+              <div className="glass-progress h-2">
                 <div
-                  className="bg-indigo-500 h-2 rounded-full transition-all duration-500"
+                  className="glass-progress-bar h-2"
                   style={{ width: `${scanProgress}%` }}
                 />
               </div>
@@ -537,12 +541,12 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
             <div className="text-sm text-slate-400">
               <strong className="text-white">{PACKAGE_PRESETS[selectedPackage]?.name}</strong>: Website analysis
               with competitor comparison, artifact detection, and recommendations.
-              <span className="ml-2 text-slate-500">Scope: {depthMode === "quick" ? "Quick (~10 Seiten)" : depthMode === "standard" ? "Standard (~40 Seiten)" : "Full (alle Seiten)"}</span>
+              <span className="ml-2 text-slate-500">Scope: {depthMode === "quick" ? "Quick (~10 pages)" : depthMode === "standard" ? "Standard (~40 pages)" : "Full (all pages)"}</span>
             </div>
             <button
               onClick={handleStart}
               disabled={isLoading || !url}
-              className="w-full sm:w-auto bg-indigo-500 hover:bg-indigo-400 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-bold px-8 py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+              className="w-full sm:w-auto glass-button disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-8 py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -561,7 +565,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
 
         {/* What You Get */}
         <div className="mt-12 grid md:grid-cols-3 gap-6">
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
+          <div className="glass-card p-5">
             <div className="w-10 h-10 bg-indigo-500/20 rounded-lg flex items-center justify-center mb-3">
               <Search className="w-5 h-5 text-indigo-400" />
             </div>
@@ -570,7 +574,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
               Comprehensive check of all AI-relevant artifacts: schemas, robots.txt, sitemaps, llms.txt, and more.
             </p>
           </div>
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
+          <div className="glass-card p-5">
             <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center mb-3">
               <Bot className="w-5 h-5 text-emerald-400" />
             </div>
@@ -579,7 +583,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
               AI-powered competitor discovery and comparison to see how you stack up in your industry.
             </p>
           </div>
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
+          <div className="glass-card p-5">
             <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center mb-3">
               <FileCode className="w-5 h-5 text-amber-400" />
             </div>
