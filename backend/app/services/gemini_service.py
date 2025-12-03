@@ -643,29 +643,53 @@ Antworte als JSON:
     # IMPROVED: Two-part test for more accurate knowledge detection
     
     # Part 1: Direct knowledge test (simplified for speed)
-    direct_test = f"""Kennst du das Unternehmen "{company_name}"? Antworte nur mit "ja" oder "nein" und einer sehr kurzen Begründung (max 1 Satz)."""
+    direct_test = f"""Kennst du das Unternehmen "{company_name}"?
+    
+Antworte als JSON mit diesen EXAKTEN Feldern:
+{{
+  "known": true oder false,
+  "confidence": "high" oder "low" oder "none",
+  "description": "Kurze Beschreibung was das Unternehmen macht" oder null
+}}
+
+Wenn du das Unternehmen kennst: known=true, confidence="high" oder "low" je nach Sicherheit
+Wenn du es nicht kennst: known=false, confidence="none", description=null"""
 
     direct_response = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=direct_test,
         config={
-            "system_instruction": """Antworte SEHR KURZ als JSON:
-{
-  "known": true/false,
-  "confidence": "high" | "low" | "none",
-  "description": "1 Satz oder null"
-}""",
             "response_mime_type": "application/json",
-            "max_output_tokens": 100,
+            "max_output_tokens": 150,
             "temperature": 0.1,
         },
     )
     
     try:
         direct_data = json.loads(direct_response.text or "{}")
-        is_known = direct_data.get("known", False)
+        
+        # Handle both "known" field and "answer" field (fallback)
+        if "known" in direct_data:
+            is_known = direct_data.get("known", False)
+        elif "answer" in direct_data:
+            # Fallback: parse "ja/nein" answer
+            answer = str(direct_data.get("answer", "")).lower()
+            is_known = answer in ["ja", "yes", "true"]
+        else:
+            is_known = False
+        
+        # Parse confidence
         confidence = direct_data.get("confidence", "none")
-    except:
+        if confidence not in ["high", "low", "none"]:
+            # Infer confidence from answer quality
+            if is_known and direct_data.get("description"):
+                confidence = "high"
+            elif is_known:
+                confidence = "low"
+            else:
+                confidence = "none"
+                
+    except Exception as e:
         direct_data = {}
         is_known = False
         confidence = "none"
