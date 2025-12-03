@@ -145,3 +145,59 @@ def generate_ai_manifest_from_markdown(markdown: str) -> str:
     )
     contents = f"KONTEXT (Markdown):\n{markdown}\n\nAUFGABE: Erzeuge AI Manifest (nur JSON)."
     return _gen_plain("gemini-2.0-flash", system_instruction, contents)
+
+
+def generate_llms_txt_from_markdown(markdown: str) -> str:
+    """
+    Generate a llms.txt file based on site content.
+    llms.txt is a standardized file that describes how LLMs should interact with the site,
+    including allowed/disallowed content, attribution preferences, and content policies.
+    """
+    system_instruction = (
+        "Du bist ein llms.txt Generator. "
+        "Erzeuge eine vollständige llms.txt Datei nach dem Standard für LLM-Zugriffspolitiken. "
+        "Die Datei soll folgende Abschnitte enthalten:\n"
+        "1. # Title - Kurzname der Website\n"
+        "2. ## Description - Kurze Beschreibung der Website\n"
+        "3. ## Allowed - Welche Inhalte dürfen LLMs nutzen\n"
+        "4. ## Disallowed - Welche Inhalte sind ausgeschlossen\n"
+        "5. ## Attribution - Wie sollen LLMs die Quelle zitieren\n"
+        "6. ## Contact - Kontakt für Fragen\n"
+        "7. ## Preferred-Citation - Bevorzugte Zitierweise\n"
+        "8. ## Policy-Version - Version der Policy\n\n"
+        "Leite alle Informationen aus dem gegebenen Kontext ab. "
+        "Antworte NUR mit dem llms.txt Inhalt (Plaintext, Markdown-Format)."
+    )
+    contents = f"KONTEXT (Markdown):\n{markdown}\n\nAUFGABE: Erzeuge llms.txt (nur Plaintext mit Markdown-Überschriften)."
+    result = _gen_plain("gemini-2.0-flash", system_instruction, contents)
+    
+    # Ensure we have a valid baseline
+    if not result or len(result.strip()) < 30:
+        result = """# Website
+
+## Description
+Website content and services.
+
+## Allowed
+- General website content
+- Public documentation
+- Service descriptions
+
+## Disallowed
+- Private user data
+- Internal communications
+- Proprietary business logic
+
+## Attribution
+Please cite as: "Source: [Website Name]"
+
+## Contact
+For questions about AI usage policy, please contact the website owner.
+
+## Preferred-Citation
+[Website Name] - https://example.com
+
+## Policy-Version
+1.0
+"""
+    return result
