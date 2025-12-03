@@ -814,25 +814,86 @@ function AIAnalysisSection({ analysis }: { analysis: AIAnalysis }) {
                 <div>
                   <h4 className="text-xs font-medium text-slate-400 uppercase mb-3 flex items-center gap-2">
                     <Brain className="w-4 h-4" />
-                    Ungrounded Brand Recall Test
+                    Ungrounded Brand Recall Test (2-Part Analysis)
                   </h4>
-                  <div className="p-4 rounded-lg border bg-slate-900/50 border-slate-700">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <p className="text-sm font-medium text-white flex-1">
-                        Was the brand mentioned when asking about leading companies in the industry?
-                      </p>
-                      {analysis.aiVisibility.ungroundedScore > 0 ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                      ) : (
-                        <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-                      )}
+                  
+                  <div className="space-y-3">
+                    {/* Part 1: Direct Knowledge Test */}
+                    <div className="p-4 rounded-lg border bg-slate-900/50 border-slate-700">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-white mb-1">
+                            Part 1: Direct Knowledge Test
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            "Do you know the company [Name]? Describe what it does."
+                          </p>
+                        </div>
+                        {analysis.aiVisibility.ungroundedScore >= 50 ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                        )}
+                      </div>
+                      <div className="text-xs">
+                        <span className={analysis.aiVisibility.ungroundedScore >= 50 ? "text-emerald-400" : "text-red-400"}>
+                          {analysis.aiVisibility.ungroundedScore >= 50 
+                            ? "✓ LLM has direct knowledge of the brand" 
+                            : "✗ LLM does not have direct knowledge"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-xs">
-                      <span className={analysis.aiVisibility.ungroundedScore > 0 ? "text-emerald-400" : "text-red-400"}>
-                        {analysis.aiVisibility.ungroundedScore > 0 ? "✓ Brand was recalled" : "✗ Brand was not recalled"}
-                      </span>
-                      <span className="text-slate-500 mx-2">•</span>
-                      <span className="text-slate-400">Score: {analysis.aiVisibility.ungroundedScore}/100</span>
+
+                    {/* Part 2: Competitive Context */}
+                    <div className="p-4 rounded-lg border bg-slate-900/50 border-slate-700">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-white mb-1">
+                            Part 2: Competitive Context Test
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            "Which companies are leading in the industry?"
+                          </p>
+                        </div>
+                        {analysis.aiVisibility.ungroundedScore === 100 ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                        )}
+                      </div>
+                      <div className="text-xs">
+                        <span className={analysis.aiVisibility.ungroundedScore === 100 ? "text-emerald-400" : "text-amber-400"}>
+                          {analysis.aiVisibility.ungroundedScore === 100
+                            ? "✓ Brand mentioned as industry leader"
+                            : "○ Brand not mentioned in top leaders"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Final Score */}
+                    <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-slate-300">
+                          <strong>Final Ungrounded Score:</strong>
+                        </span>
+                        <span className={`text-lg font-bold ${
+                          analysis.aiVisibility.ungroundedScore >= 75 ? "text-emerald-400" :
+                          analysis.aiVisibility.ungroundedScore >= 50 ? "text-blue-400" :
+                          analysis.aiVisibility.ungroundedScore >= 25 ? "text-amber-400" :
+                          "text-red-400"
+                        }`}>
+                          {analysis.aiVisibility.ungroundedScore}/100
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-2">
+                        {analysis.aiVisibility.ungroundedScore >= 75 
+                          ? "Excellent - Brand is well-known in AI training data"
+                          : analysis.aiVisibility.ungroundedScore >= 50
+                          ? "Good - Brand has some recognition in AI training data"
+                          : analysis.aiVisibility.ungroundedScore >= 25
+                          ? "Fair - Brand is vaguely known but not prominent"
+                          : "⚠️ Brand has minimal/no presence in AI training data"}
+                      </p>
                     </div>
                   </div>
                 </div>
