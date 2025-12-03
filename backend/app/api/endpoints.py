@@ -853,9 +853,69 @@ async def content_gap_backend(req: dict):
 
 @router.post("/analysis/nap-audit", response_model=NAPAuditResponse)
 async def nap_audit(req: NAPAuditRequest) -> NAPAuditResponse:
+    """
+    Enhanced NAP audit that scans multiple relevant pages:
+    - Homepage
+    - /impressum, /imprint
+    - /kontakt, /contact
+    - /about, /ueber-uns
+    """
     try:
-        md, _ = await scrape_markdown(str(req.url))
-        nap = extract_nap_json(md)
+        base_url = str(req.url).rstrip("/")
+        parsed = urlparse(base_url)
+        base = f"{parsed.scheme}://{parsed.netloc}"
+        
+        # Pages to check for NAP data
+        nap_pages = [
+            base_url,  # Homepage
+            f"{base}/impressum",
+            f"{base}/imprint", 
+            f"{base}/kontakt",
+            f"{base}/contact",
+            f"{base}/about",
+            f"{base}/ueber-uns",
+            f"{base}/about-us",
+            f"{base}/legal",
+            f"{base}/datenschutz",  # Often contains company info
+        ]
+        
+        # Collect markdown from all accessible pages
+        all_content = []
+        scanned_pages = []
+        
+        for page_url in nap_pages:
+            try:
+                md, _ = await scrape_markdown(page_url)
+                if md and len(md.strip()) > 100:
+                    all_content.append(f"\n\n--- PAGE: {page_url} ---\n\n{md}")
+                    scanned_pages.append(page_url)
+            except Exception:
+                continue  # Page doesn't exist or failed
+        
+        if not all_content:
+            # Fallback to just homepage
+            md, _ = await scrape_markdown(base_url)
+            all_content = [md]
+            scanned_pages = [base_url]
+        
+        # Combine all content for NAP extraction
+        combined_markdown = "\n".join(all_content)
+        
+        # Limit content size for API
+        if len(combined_markdown) > 100000:
+            combined_markdown = combined_markdown[:100000]
+        
+        nap = extract_nap_json(combined_markdown)
+        
+        # Add metadata about scanned pages
+        nap["_scanned_pages"] = scanned_pages
+        nap["_pages_count"] = len(scanned_pages)
+        
+        # Calculate completeness
+        fields_found = sum(1 for k in ["name", "address", "phone", "email"] if nap.get(k))
+        nap["_completeness"] = f"{fields_found}/4"
+        nap["_is_complete"] = fields_found >= 3  # At least name, address, phone
+        
         return NAPAuditResponse(nap=nap)
     except (Crawl4AINotConfigured, GeminiNotConfigured) as e:
         raise HTTPException(status_code=400, detail=str(e))
