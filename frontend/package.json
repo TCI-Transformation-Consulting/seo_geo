@@ -60,6 +60,7 @@
     "sonner": "latest",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
+    "tw-animate-css": "latest",
     "vaul": "latest",
     "yaml": "latest",
     "zod": "latest"
@@ -70,7 +71,7 @@
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "postcss": "^8.5",
-    "tailwindcss": "^3.4.0",
+    "tailwindcss": "^4.0.0",
     "typescript": "^5"
   }
 }
