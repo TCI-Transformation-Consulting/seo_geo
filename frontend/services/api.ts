@@ -219,13 +219,27 @@ export const postFactCheck = async (claim: string, contextUrls: string[]) =>
     60000,
   )
 
-export const postCompetitorSearch = async (query: string, domain: string, maxResults = 5) => {
+export const postCompetitorSearch = async (
+  query: string,
+  domain: string,
+  maxResults = 5,
+  companyProfile?: any
+) => {
   const domainNormalized = /^https?:\/\//i.test(domain) ? domain : `https://${domain}`
   return postJson<{
     competitors: Array<{ name: string; url: string; description: string }>
     search_queries: string[]
     citations: Array<{ title: string; url: string }>
-  }>("/analysis/competitor-search", { query, domain: domainNormalized, max_results: maxResults }, 60000)
+  }>(
+    "/analysis/competitor-search",
+    {
+      query,
+      domain: domainNormalized,
+      max_results: maxResults,
+      company_profile: companyProfile,
+    },
+    60000
+  )
 }
 
 export const searchCompetitorsGrounded = async (domain: string, industry?: string, maxResults = 5) => {
