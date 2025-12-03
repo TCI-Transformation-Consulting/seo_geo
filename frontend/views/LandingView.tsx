@@ -211,8 +211,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
             name: nap?.name ?? null,
             address: nap?.address ?? null,
             phone: nap?.phone ?? null,
-            email: null,
-            isComplete: !!(nap?.name && nap?.address && nap?.phone),
+            email: nap?.email ?? null,
+            isComplete: nap?.is_complete ?? !!(nap?.name && nap?.address && nap?.phone),
+            scannedPages: nap?.scanned_pages || [],
+            completeness: nap?.completeness || "0/4",
           },
           factCheck: {
             claims: [],
