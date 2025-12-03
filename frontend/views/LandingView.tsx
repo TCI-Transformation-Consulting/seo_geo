@@ -139,16 +139,22 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
 
     try {
       const scanResult = await initialScan(normalizedUrl)
-      setScanProgress(82)
-      setScanStatus("Initial scan complete, running deep analysis...")
+      setScanProgress(75)
+      setScanStatus("Initial scan complete, running comprehensive LLM analysis...")
 
-      // Attempt deep analysis; use real backend heuristics for topics and content gaps
+      // Run comprehensive LLM-based analysis (Scrape → LLM Parse → Structured Data)
       let analysisError: string | undefined
       let aiAnalysis: any | undefined
+      let comprehensiveData: any | undefined
+      
       try {
-        setScanStatus("Extracting content chunks...")
+        setScanStatus("Running comprehensive AI analysis...")
+        comprehensiveData = await runComprehensiveAnalysis(normalizedUrl)
+        setScanProgress(88)
+        
+        // Also get content chunks for questions
+        setScanStatus("Extracting content insights...")
         const chunksRes = await getContentChunks(normalizedUrl, 10)
-        setScanProgress(85)
         
         const rawQuestions = (chunksRes?.chunks || [])
           .map((c: any) => String(c?.question || ""))
@@ -162,69 +168,80 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
               .filter((q) => q.length > 8 && !noise.some((rx) => rx.test(q)))
           )
         ).slice(0, 8)
+        setScanProgress(92)
 
-        // Topic recognition and content gaps (backend will fetch HTML if content omitted)
-        setScanStatus("Running topic recognition...")
-        const topic = await postTopicRecognition(
-          normalizedUrl,
-          "",
-          (scanResult as any)?.contentAnalysis?.title
-        )
-        setScanProgress(88)
-        
-        setScanStatus("Analyzing content gaps...")
-        const gap = await postContentGap(
-          normalizedUrl,
-          "",
-          (scanResult as any)?.contentAnalysis?.title,
-          topic?.industry
-        )
-        setScanProgress(91)
-
-        // NAP audit
-        setScanStatus("Auditing NAP data...")
-        const napRes = await postNapAudit(normalizedUrl)
-        const nap = (napRes as any)?.nap || {}
-        setScanProgress(94)
+        // Use comprehensive analysis results
+        const business = comprehensiveData?.business || {}
+        const content = comprehensiveData?.content || {}
+        const entities = comprehensiveData?.entities || {}
+        const seo = comprehensiveData?.seo || {}
+        const credibility = comprehensiveData?.credibility || {}
+        const contentQuality = comprehensiveData?.contentQuality || {}
+        const schema = comprehensiveData?.schema || {}
 
         aiAnalysis = {
           topicRecognition: {
-            primaryTopic: topic?.primaryTopic || "",
-            secondaryTopics: topic?.secondaryTopics || [],
-            industry: topic?.industry || "general",
-            contentType: topic?.contentType || "web",
-            keywords: topic?.keywords || [],
-            entities: topic?.entities || [],
-            targetAudience: topic?.targetAudience || "",
-            confidence: topic?.confidence ?? 60,
+            primaryTopic: content?.primaryTopic || "",
+            secondaryTopics: content?.secondaryTopics || [],
+            industry: content?.industry || "general",
+            contentType: content?.contentType || "web",
+            keywords: entities?.keywords || [],
+            entities: (entities?.people || []).map((p: any) => ({ name: p.name, type: p.role || "Person" })),
+            targetAudience: content?.targetAudience || "",
+            confidence: credibility?.score ?? 60,
           },
           contentGap: {
-            missingTopics: gap?.missingTopics || [],
-            missingQuestions: gap?.missingQuestions || [],
-            contentScore: gap?.contentScore ?? 50,
+            missingTopics: contentQuality?.missingElements || [],
+            missingQuestions: [],
+            contentScore: contentQuality?.score ?? 50,
             recommendations: [
-              ...(gap?.schemaOpportunities || []),
-              ...(gap?.summary ? [gap.summary] : []),
+              ...(schema?.reasoning ? [schema.reasoning] : []),
+              ...(!contentQuality?.hasFAQ ? ["Add FAQ section for better AI discoverability"] : []),
+              ...(!contentQuality?.hasPricing ? ["Consider adding pricing information"] : []),
             ],
           },
           napData: {
-            name: nap?.name ?? null,
-            address: nap?.address ?? null,
-            phone: nap?.phone ?? null,
-            email: nap?.email ?? null,
-            isComplete: nap?.is_complete ?? !!(nap?.name && nap?.address && nap?.phone),
-            scannedPages: nap?.scanned_pages || [],
-            completeness: nap?.completeness || "0/4",
+            name: business?.name ?? null,
+            legalForm: business?.legalForm ?? null,
+            address: business?.address ?? null,
+            phone: business?.phone ?? null,
+            email: business?.email ?? null,
+            isComplete: !!(business?.name && business?.address && (business?.phone || business?.email)),
+            scannedPages: comprehensiveData?._meta?.scannedPages || [],
+            completeness: `${[business?.name, business?.address, business?.phone, business?.email].filter(Boolean).length}/4`,
+            foundOnPage: business?.foundOnPage ?? null,
+            validation: business?._validation ?? null,
+          },
+          seoData: {
+            title: seo?.title ?? null,
+            description: seo?.description ?? null,
+            h1: seo?.h1 || [],
+            h1Assessment: seo?.h1Assessment ?? null,
+            keyMessages: seo?.keyMessages || [],
+          },
+          credibility: {
+            hasImpressum: credibility?.hasImpressum ?? false,
+            hasContact: credibility?.hasContact ?? false,
+            hasSocialProof: credibility?.hasSocialProof ?? false,
+            trustSignals: credibility?.trustSignals || [],
+            score: credibility?.score ?? 50,
+          },
+          schemaRecommendations: {
+            detected: schema?.detected || [],
+            recommended: schema?.recommended || [],
+            reasoning: schema?.reasoning ?? null,
           },
           factCheck: {
             claims: [],
-            overallCredibility: 50,
-            recommendations: [],
+            overallCredibility: credibility?.score ?? 50,
+            recommendations: credibility?.trustSignals || [],
           },
-          userQuestions: filteredQuestions,
+          userQuestions: filteredQuestions.length > 0 ? filteredQuestions : (seo?.keyMessages || []),
         }
+        setScanProgress(94)
       } catch (e: any) {
-        analysisError = e?.message || "Content analysis failed"
+        analysisError = e?.message || "Comprehensive analysis failed"
+        console.warn("Comprehensive analysis error:", e)
       }
 
       // Optional batch run based on selected scope
