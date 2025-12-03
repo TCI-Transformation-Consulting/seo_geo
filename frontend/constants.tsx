@@ -1,9 +1,8 @@
-import { Home, LayoutDashboard, CreditCard, BookOpen } from "lucide-react"
+import { Home, CreditCard, BookOpen } from "lucide-react"
 
 // Navigation items for sidebar (login is gated separately, not shown here)
 export const NAV_ITEMS = [
   { id: "home", label: "Home", view: "landing" as const, icon: Home },
-  { id: "dashboard", label: "Dashboard", view: "dashboard" as const, icon: LayoutDashboard },
   { id: "pricing", label: "Pricing", view: "pricing" as const, icon: CreditCard },
   { id: "docs", label: "Documentation", view: "landing" as const, icon: BookOpen },
 ]
