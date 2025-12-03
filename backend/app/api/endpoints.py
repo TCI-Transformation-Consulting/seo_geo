@@ -61,6 +61,10 @@ from ..services.gemini_service import (
     analyze_ai_visibility,
     analyze_page_comprehensive,
     validate_extracted_data,
+    generate_user_questions,
+    ai_visibility_ungrounded,
+    ai_visibility_grounded,
+    calculate_ai_visibility_score,
 )
 from ..services.generation_service import (
     generate_openapi_from_markdown,
