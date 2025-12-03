@@ -280,6 +280,15 @@ class AIManifestGenerateRequest(BaseModel):
 class AIManifestGenerateResponse(BaseModel):
     manifest: str
 
+
+class LlmsTxtGenerateRequest(BaseModel):
+    url: HttpUrl
+
+
+class LlmsTxtGenerateResponse(BaseModel):
+    llms_txt: str
+
+
 class CompetitorSearchRequest(BaseModel):
     domain: HttpUrl = Field(..., description="The domain to find competitors for")
     query: str = Field(..., description="Search context/topic for finding competitors")
