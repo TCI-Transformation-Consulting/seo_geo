@@ -114,9 +114,12 @@ export interface AIVisibility {
   contentGaps: string[]
   groundedResults: Array<{
     question: string
-    answer: string
-    found_in_content: boolean
-    confidence: number
+    answerable: boolean
+    answer_quality: string
+    answer_preview: string | null
+    missing_info: string | null
+    score: number
+    max_score: number
   }>
 }
 
