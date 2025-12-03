@@ -1416,17 +1416,121 @@ function InitialScanResults({ scan }: { scan: InitialScanResult }) {
         )}
       </div>
 
-      {/* Artifact Checks */}
+      {/* AI-Ready Files & Artifact Checks - Combined Tab */}
       <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-        <button onClick={() => toggleSection("artifacts")} className="w-full flex items-center justify-between">
+        <button onClick={() => toggleSection("ai-ready")} className="w-full flex items-center justify-between">
           <h2 className="text-xl font-bold flex items-center gap-3">
-            <Shield className="w-6 h-6 text-cyan-400" />
-            Artifact Checks
+            <Sparkles className="w-6 h-6 text-amber-400" />
+            AI-Ready Files & Artifacts
           </h2>
-          {expandedSections.has("artifacts") ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+          {expandedSections.has("ai-ready") ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
         </button>
 
-        {expandedSections.has("artifacts") && (
+        {expandedSections.has("ai-ready") && (
+          <div className="mt-6 space-y-8">
+            {/* Generate AI-Ready Files Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <FileCode className="w-5 h-5 text-indigo-400" />
+                Generate Files
+              </h3>
+              <p className="text-slate-400 text-sm mb-4">
+                One-click generation of structured data and configuration files to improve AI discoverability.
+              </p>
+              <GenerateFilesSection project={project} />
+            </div>
+
+            {/* Artifact Status Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <Shield className="w-5 h-5 text-cyan-400" />
+                Artifact Status
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                {(() => {
+                  const tech = scan.technicalStatus || {}
+                  const artifactChecks = {
+                    jsonLdSchema: { status: tech.schema ? "found" : "not_found", types: tech.schemaTypes || [] },
+                    robotsTxt: { status: tech.robotsTxt ? "found" : "not_found", hasAiDirectives: tech.robotsAiOptimized },
+                    sitemap: { status: tech.sitemap ? "found" : "not_found", urlCount: tech.sitemapUrls },
+                    rssFeed: { status: tech.rssFeed ? "found" : "not_found", itemCount: tech.rssItems },
+                    llmsTxt: { status: tech.llmsTxtFound ? "found" : "not_found" },
+                    aiManifest: { status: tech.aiManifestFound ? "found" : "not_found" },
+                    mcpConfig: { status: tech.mcpConfigFound ? "found" : "not_found" },
+                    openApi: { status: tech.openApiFound ? "found" : "not_found" },
+                  }
+
+                  return Object.entries(artifactChecks).map(([key, value]) => {
+                    const competitorHasIt = scan.competitors?.some(
+                      (c) => c.artifactChecks?.[key as keyof typeof c.artifactChecks]?.status === "found",
+                    )
+                    const userMissingCompetitorHas = value.status !== "found" && competitorHasIt
+
+                    return (
+                      <div
+                        key={key}
+                        className={`border rounded-lg p-4 ${
+                          value.status === "found"
+                            ? "bg-emerald-500/10 border-emerald-500/30"
+                            : value.status === "not_found"
+                              ? userMissingCompetitorHas
+                                ? "bg-red-500/10 border-red-500/30"
+                                : "bg-slate-700/50 border-slate-600"
+                              : "bg-amber-500/10 border-amber-500/30"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-white">{getArtifactLabel(key)}</span>
+                          <div className="flex items-center gap-2">
+                            {userMissingCompetitorHas && <span className="text-xs text-red-400">Competitor has this</span>}
+                            {value.status === "found" ? (
+                              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                            ) : value.status === "not_found" ? (
+                              <XCircle
+                                className={`w-5 h-5 ${userMissingCompetitorHas ? "text-red-400" : "text-slate-500"}`}
+                              />
+                            ) : (
+                              <AlertCircle className="w-5 h-5 text-amber-400" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Show additional details */}
+                        {"types" in value && value.types && value.types.length > 0 && (
+                          <div className="mt-2 text-xs text-slate-400">Types: {value.types.join(", ")}</div>
+                        )}
+                        {"urlCount" in value && typeof value.urlCount === "number" && value.urlCount > 0 && (
+                          <div className="mt-2 text-xs text-slate-400">{value.urlCount} URLs indexed</div>
+                        )}
+                        {"itemCount" in value && typeof value.itemCount === "number" && value.itemCount > 0 && (
+                          <div className="mt-2 text-xs text-slate-400">{value.itemCount} items</div>
+                        )}
+                        {"hasAiDirectives" in value && value.status === "found" && (
+                          <div className="mt-2 text-xs text-slate-400">
+                            AI directives: {value.hasAiDirectives ? "Yes" : "No"}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* OLD Artifact Checks section - keeping for reference, will be removed */}
+      <div style={{display: 'none'}} className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+        <button onClick={() => toggleSection("artifacts-old")} className="w-full flex items-center justify-between">
+          <h2 className="text-xl font-bold flex items-center gap-3">
+            <Shield className="w-6 h-6 text-cyan-400" />
+            Artifact Checks (OLD - Hidden)
+          </h2>
+          {expandedSections.has("artifacts-old") ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+        </button>
+
+        {expandedSections.has("artifacts-old") && (
           <div className="mt-6 grid md:grid-cols-2 gap-4">
             {(() => {
               const tech = scan.technicalStatus || {}
