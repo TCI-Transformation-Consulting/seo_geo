@@ -642,30 +642,24 @@ Antworte als JSON:
 
     # IMPROVED: Two-part test for more accurate knowledge detection
     
-    # Part 1: Direct knowledge test
-    direct_test = f"""Kennst du das Unternehmen "{company_name}"?
-Falls ja, beschreibe kurz (max 2-3 Sätze):
-- Was macht dieses Unternehmen?
-- In welcher Branche ist es tätig?
-
-Falls nein oder unsicher, sage es ehrlich."""
+    # Part 1: Direct knowledge test (simplified for speed)
+    direct_test = f"""Kennst du das Unternehmen "{company_name}"? Antworte nur mit "ja" oder "nein" und einer sehr kurzen Begründung (max 1 Satz)."""
 
     direct_response = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=direct_test,
         config={
-            "system_instruction": """Du bist ein ehrlicher Assistent.
-Wenn du ein Unternehmen nicht kennst oder unsicher bist, sage es klar.
-Erfinde NICHTS.
-
-Antworte als JSON:
+            "system_instruction": """Antworte SEHR KURZ als JSON:
 {
   "known": true/false,
   "confidence": "high" | "low" | "none",
-  "description": "Beschreibung falls bekannt" oder null,
-  "source_assumption": "Warum du glaubst, es zu kennen oder nicht"
+  "description": "1 Satz oder null"
 }""",
             "response_mime_type": "application/json",
+            "generation_config": {
+                "max_output_tokens": 100,  # Limit output for speed
+                "temperature": 0.1,  # More deterministic = faster
+            }
         },
     )
     
