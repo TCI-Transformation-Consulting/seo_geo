@@ -67,7 +67,7 @@ def backend_info():
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "healthy"}
+    return {"status": "ok", "version": "1.0.0"}
 
 
 # Exception handler
