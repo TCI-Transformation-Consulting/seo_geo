@@ -38,6 +38,7 @@ import {
   Tag,
   Award,
   Info,
+  FileText,
   Zap,
   ArrowUp,
   ArrowRight,
