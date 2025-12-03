@@ -1714,9 +1714,6 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
         {project.aiAnalysis && (
           <AIAnalysisSection analysis={project.aiAnalysis} />
         )}
-
-        {/* Generate Files Section */}
-        <GenerateFilesSection project={project} />
       </div>
     </div>
   )
