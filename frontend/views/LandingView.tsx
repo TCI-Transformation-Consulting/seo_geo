@@ -370,6 +370,11 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
         }),
       }
 
+      // Final progress update
+      clearInterval(progressInterval)
+      setScanProgress(100)
+      setScanStatus("Analysis complete!")
+
       setTimeout(() => onScanComplete(project), 500)
     } catch (err: any) {
       clearInterval(progressInterval)
