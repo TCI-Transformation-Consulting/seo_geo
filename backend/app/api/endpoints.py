@@ -1973,3 +1973,155 @@ async def analyze_ai_visibility_endpoint(request: AIVisibilityRequest):
     )
     
     return AIVisibilityResponse(**result)
+
+
+@router.post("/analysis/ai-visibility-full")
+async def ai_visibility_full_analysis(req: dict):
+    """
+    Full AI Visibility Analysis with two layers:
+    1. Ungrounded Visibility - Does the LLM know this brand without context?
+    2. Grounded Visibility - Can the LLM answer questions using website content?
+    
+    Combined into a final AI Visibility Score.
+    
+    Body: {
+        "url": str,
+        "company_name": str (optional, extracted if not provided),
+        "industry": str (optional),
+        "location": str (optional)
+    }
+    """
+    try:
+        url = req.get("url")
+        if not url:
+            raise HTTPException(status_code=400, detail="URL required")
+        
+        # First, run comprehensive analysis to get company profile
+        base_url = str(url).rstrip("/")
+        parsed = urlparse(base_url)
+        hostname = parsed.netloc
+        scheme = parsed.scheme or "https"
+        
+        # Handle www variants
+        if hostname.startswith("www."):
+            hostname_alt = hostname[4:]
+        else:
+            hostname_alt = f"www.{hostname}"
+        
+        bases = [f"{scheme}://{hostname}", f"{scheme}://{hostname_alt}"]
+        
+        # Collect content
+        all_content = []
+        for base in bases:
+            for path in ["", "/impressum", "/kontakt", "/about"]:
+                if len(all_content) >= 4:
+                    break
+                page_url = f"{base}{path}"
+                try:
+                    md, _ = await scrape_markdown(page_url)
+                    if md and len(md.strip()) > 200:
+                        all_content.append(md[:10000])
+                except Exception:
+                    continue
+            if len(all_content) >= 4:
+                break
+        
+        if not all_content:
+            raise HTTPException(status_code=400, detail="Could not scrape content")
+        
+        combined = "\n\n".join(all_content)[:40000]
+        
+        # Get comprehensive profile
+        company_profile = analyze_page_comprehensive(combined, base_url)
+        
+        # Extract info
+        company_name = req.get("company_name") or company_profile.get("business", {}).get("name", hostname)
+        industry = req.get("industry") or company_profile.get("content", {}).get("industry", "general")
+        location = req.get("location") or ""
+        services = company_profile.get("entities", {}).get("products", [])
+        
+        # Generate user questions
+        user_questions = generate_user_questions(company_profile, industry, location)
+        
+        # Run Ungrounded Visibility Test
+        ungrounded_result = ai_visibility_ungrounded(
+            company_name=company_name,
+            industry=industry,
+            location=location,
+            services=services
+        )
+        
+        # Run Grounded Visibility Test
+        grounded_result = ai_visibility_grounded(
+            company_profile=company_profile,
+            test_questions=user_questions
+        )
+        
+        # Calculate final score
+        visibility_score = calculate_ai_visibility_score(ungrounded_result, grounded_result)
+        
+        return {
+            "company_name": company_name,
+            "industry": industry,
+            "location": location,
+            "user_questions": user_questions,
+            "ungrounded": ungrounded_result,
+            "grounded": grounded_result,
+            "visibility_score": visibility_score,
+            "company_profile_summary": {
+                "business": company_profile.get("business", {}),
+                "content": company_profile.get("content", {}),
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"AI Visibility analysis failed: {e}")
+
+
+@router.post("/analysis/user-questions")
+async def generate_user_questions_endpoint(req: dict):
+    """
+    Generate intelligent user questions that potential customers might ask.
+    Uses company profile to create contextually relevant questions.
+    
+    Body: {
+        "url": str,
+        "industry": str (optional),
+        "location": str (optional)
+    }
+    """
+    try:
+        url = req.get("url")
+        if not url:
+            raise HTTPException(status_code=400, detail="URL required")
+        
+        # Get comprehensive profile first
+        base_url = str(url).rstrip("/")
+        
+        # Scrape content
+        md, _ = await scrape_markdown(base_url)
+        if not md:
+            raise HTTPException(status_code=400, detail="Could not scrape content")
+        
+        # Get profile
+        company_profile = analyze_page_comprehensive(md[:30000], base_url)
+        
+        industry = req.get("industry") or company_profile.get("content", {}).get("industry", "general")
+        location = req.get("location") or ""
+        
+        # Generate questions
+        questions = generate_user_questions(company_profile, industry, location)
+        
+        return {
+            "questions": questions,
+            "industry": industry,
+            "company_name": company_profile.get("business", {}).get("name"),
+            "primary_topic": company_profile.get("content", {}).get("primaryTopic")
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Question generation failed: {e}")
