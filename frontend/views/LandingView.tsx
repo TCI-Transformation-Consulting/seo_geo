@@ -150,14 +150,14 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
       let comprehensiveData: any | undefined
       
       try {
-        setScanStatus("Running comprehensive AI analysis...")
+        updateProgress(68, "Running comprehensive AI analysis...")
         comprehensiveData = await runComprehensiveAnalysis(normalizedUrl)
-        setScanProgress(88)
+        updateProgress(78, "Analysis complete, processing results...")
         
         // Also get content chunks for questions (non-blocking)
         let filteredQuestions: string[] = []
         try {
-          setScanStatus("Extracting content insights...")
+          updateProgress(80, "Extracting content insights...")
           const chunksRes = await getContentChunks(normalizedUrl, 10)
           
           const rawQuestions = (chunksRes?.chunks || [])
@@ -175,7 +175,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
         } catch (chunkError) {
           console.warn("Content chunks extraction failed, using comprehensive data:", chunkError)
         }
-        setScanProgress(92)
+        updateProgress(82, "Building report data...")
 
         // Use comprehensive analysis results
         const business = comprehensiveData?.business || {}
