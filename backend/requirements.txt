@@ -11,3 +11,4 @@ lxml
 passlib[bcrypt]
 PyJWT
 email-validator
+html2text
