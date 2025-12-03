@@ -44,6 +44,10 @@ import {
   ArrowDown,
   Layers,
   Settings,
+  Bot,
+  Rss,
+  Sparkles,
+  FileJson,
 } from "lucide-react"
 import {
   generateJsonLd,
