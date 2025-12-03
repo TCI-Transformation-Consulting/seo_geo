@@ -544,6 +544,367 @@ def fact_check_claim(claim: str, context_markdown: str) -> Dict[str, Any]:
     return {"verdict": verdict, "evidence": evidence}
 
 
+def generate_user_questions(company_profile: Dict[str, Any], industry: str, location: str = "") -> List[str]:
+    """
+    Generate intelligent, relevant user questions that potential customers might ask
+    about this business. These are questions an AI assistant should be able to answer.
+    
+    Args:
+        company_profile: Extracted company data (name, services, etc.)
+        industry: The business industry
+        location: Optional location for local relevance
+    
+    Returns:
+        List of 5-8 high-quality user questions
+    """
+    client = _get_client()
+    
+    company_name = company_profile.get("business", {}).get("name", "das Unternehmen")
+    services = company_profile.get("entities", {}).get("products", [])
+    target_audience = company_profile.get("content", {}).get("targetAudience", "")
+    primary_topic = company_profile.get("content", {}).get("primaryTopic", "")
+    
+    system_instruction = """Du bist ein Experte für Nutzerverhalten und Suchanfragen.
+Generiere realistische Fragen, die potenzielle Kunden an einen KI-Assistenten stellen würden,
+wenn sie nach diesem Unternehmen oder seinen Dienstleistungen suchen.
+
+Die Fragen sollten:
+- Natürlich formuliert sein (wie echte Menschen fragen)
+- Relevant für die Branche und Dienstleistungen sein
+- Eine Mischung aus informationalen und transaktionalen Absichten haben
+- Lokal relevant sein (wenn Standort angegeben)
+
+Antworte NUR als JSON-Array mit 6-8 Fragen als Strings."""
+
+    contents = f"""Generiere Nutzerfragen für:
+
+UNTERNEHMEN: {company_name}
+BRANCHE: {industry}
+STANDORT: {location or "nicht angegeben"}
+ZIELGRUPPE: {target_audience}
+HAUPTTHEMA: {primary_topic}
+DIENSTLEISTUNGEN/PRODUKTE: {', '.join(services[:5]) if services else 'nicht spezifiziert'}
+
+Erstelle 6-8 realistische Fragen, die Nutzer an einen KI-Assistenten stellen könnten."""
+
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=contents,
+        config={
+            "system_instruction": system_instruction,
+            "response_mime_type": "application/json",
+        },
+    )
+
+    raw = response.text or "[]"
+    try:
+        questions = json.loads(raw)
+        if isinstance(questions, list):
+            return [q for q in questions if isinstance(q, str) and len(q) > 10][:8]
+    except Exception:
+        pass
+    
+    return []
+
+
+def ai_visibility_ungrounded(company_name: str, industry: str, location: str, services: List[str]) -> Dict[str, Any]:
+    """
+    Test UNGROUNDED AI Visibility - Does the LLM know this company without context?
+    This measures the brand's presence in the LLM's trained knowledge.
+    
+    Returns:
+        {
+            "recalled": bool,
+            "mention_type": "explicit" | "indirect" | "none",
+            "score": 0-2,
+            "context": str,
+            "competitors_mentioned": [str],
+            "reasoning": str
+        }
+    """
+    client = _get_client()
+    
+    # Build industry-relevant query
+    service_hint = services[0] if services else "Dienstleistungen"
+    
+    system_instruction = """Du bist ein neutraler Marktanalyst.
+Beantworte die Frage basierend auf deinem Wissen.
+Sei ehrlich - wenn du das Unternehmen nicht kennst, sage es.
+
+Antworte als JSON:
+{
+  "mentioned_companies": ["Liste der genannten Unternehmen"],
+  "target_company_mentioned": true/false,
+  "mention_type": "explicit" | "indirect" | "none",
+  "context": "In welchem Kontext wurde es erwähnt",
+  "reasoning": "Begründung"
+}"""
+
+    # Test query without mentioning the company name
+    contents = f"""Welche Unternehmen sind führend in der Branche "{industry}" im Bereich {service_hint}?
+{f'Speziell in {location}?' if location else ''}
+
+Nenne die wichtigsten Anbieter und erkläre kurz, warum sie relevant sind."""
+
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=contents,
+        config={
+            "system_instruction": system_instruction,
+            "response_mime_type": "application/json",
+        },
+    )
+
+    raw = response.text or "{}"
+    try:
+        data = json.loads(raw)
+    except Exception:
+        data = {}
+    
+    # Check if company was mentioned
+    mentioned = data.get("mentioned_companies", [])
+    target_mentioned = data.get("target_company_mentioned", False)
+    mention_type = data.get("mention_type", "none")
+    
+    # Also check mentioned list for company name
+    if not target_mentioned and company_name:
+        company_lower = company_name.lower()
+        for m in mentioned:
+            if isinstance(m, str) and company_lower in m.lower():
+                target_mentioned = True
+                mention_type = "explicit"
+                break
+    
+    score = 0
+    if mention_type == "explicit":
+        score = 2
+    elif mention_type == "indirect":
+        score = 1
+    
+    return {
+        "recalled": target_mentioned,
+        "mention_type": mention_type,
+        "score": score,
+        "max_score": 2,
+        "context": data.get("context", ""),
+        "competitors_mentioned": [m for m in mentioned if isinstance(m, str)],
+        "reasoning": data.get("reasoning", ""),
+        "query_used": contents[:200]
+    }
+
+
+def ai_visibility_grounded(company_profile: Dict[str, Any], test_questions: List[str]) -> Dict[str, Any]:
+    """
+    Test GROUNDED AI Visibility - Can the LLM correctly answer questions using provided content?
+    This measures if the website content supports AI answerability.
+    
+    Args:
+        company_profile: The comprehensive analysis result
+        test_questions: Questions to test answerability
+    
+    Returns:
+        {
+            "total_score": int,
+            "max_score": int,
+            "percentage": float,
+            "results": [
+                {
+                    "question": str,
+                    "answerable": bool,
+                    "answer_quality": "complete" | "partial" | "none",
+                    "score": 0-2,
+                    "missing_info": str,
+                    "answer_preview": str
+                }
+            ],
+            "content_gaps": [str],
+            "recommendations": [str]
+        }
+    """
+    client = _get_client()
+    
+    # Build a content profile string
+    business = company_profile.get("business", {})
+    content = company_profile.get("content", {})
+    entities = company_profile.get("entities", {})
+    seo = company_profile.get("seo", {})
+    
+    profile_text = f"""
+UNTERNEHMEN: {business.get('name', 'Unbekannt')}
+RECHTSFORM: {business.get('legalForm', '')}
+ADRESSE: {business.get('address', '')}
+TELEFON: {business.get('phone', '')}
+E-MAIL: {business.get('email', '')}
+
+BRANCHE: {content.get('industry', '')}
+HAUPTTHEMA: {content.get('primaryTopic', '')}
+ZIELGRUPPE: {content.get('targetAudience', '')}
+
+DIENSTLEISTUNGEN/PRODUKTE:
+{chr(10).join('- ' + p for p in entities.get('products', [])[:10])}
+
+KERNBOTSCHAFTEN:
+{chr(10).join('- ' + m for m in seo.get('keyMessages', [])[:5])}
+
+MITARBEITER:
+{chr(10).join('- ' + p.get('name', '') + ' (' + p.get('role', '') + ')' for p in entities.get('people', [])[:5])}
+"""
+
+    results = []
+    total_score = 0
+    content_gaps = []
+    
+    for question in test_questions[:6]:  # Limit to 6 questions
+        system_instruction = """Du bist ein KI-Assistent der Fragen über ein Unternehmen beantwortet.
+Nutze AUSSCHLIESSLICH die bereitgestellten Informationen.
+Erfinde NICHTS hinzu.
+
+Antworte als JSON:
+{
+  "answerable": true/false,
+  "answer_quality": "complete" | "partial" | "none",
+  "answer": "Deine Antwort auf die Frage (max 100 Wörter)",
+  "missing_info": "Was fehlt, um die Frage vollständig zu beantworten" oder null
+}"""
+
+        contents = f"""UNTERNEHMENSPROFIL:
+{profile_text}
+
+FRAGE: {question}
+
+Beantworte diese Frage NUR mit den oben stehenden Informationen."""
+
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=contents,
+                config={
+                    "system_instruction": system_instruction,
+                    "response_mime_type": "application/json",
+                },
+            )
+            
+            raw = response.text or "{}"
+            data = json.loads(raw)
+            
+            quality = data.get("answer_quality", "none")
+            score = 2 if quality == "complete" else 1 if quality == "partial" else 0
+            total_score += score
+            
+            if data.get("missing_info"):
+                content_gaps.append(data["missing_info"])
+            
+            results.append({
+                "question": question,
+                "answerable": data.get("answerable", False),
+                "answer_quality": quality,
+                "score": score,
+                "max_score": 2,
+                "missing_info": data.get("missing_info"),
+                "answer_preview": (data.get("answer", "")[:150] + "...") if data.get("answer") else None
+            })
+        except Exception as e:
+            results.append({
+                "question": question,
+                "answerable": False,
+                "answer_quality": "none",
+                "score": 0,
+                "max_score": 2,
+                "missing_info": f"Error: {str(e)}",
+                "answer_preview": None
+            })
+    
+    max_score = len(results) * 2
+    percentage = (total_score / max_score * 100) if max_score > 0 else 0
+    
+    # Generate recommendations
+    recommendations = []
+    unique_gaps = list(set(content_gaps))[:5]
+    for gap in unique_gaps:
+        recommendations.append(f"Add content about: {gap}")
+    
+    if percentage < 50:
+        recommendations.append("Significantly expand website content to improve AI answerability")
+    elif percentage < 75:
+        recommendations.append("Add more detailed service descriptions and FAQs")
+    
+    return {
+        "total_score": total_score,
+        "max_score": max_score,
+        "percentage": round(percentage, 1),
+        "results": results,
+        "content_gaps": unique_gaps,
+        "recommendations": recommendations
+    }
+
+
+def calculate_ai_visibility_score(ungrounded: Dict[str, Any], grounded: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Calculate the final AI Visibility Score combining both layers.
+    
+    Formula:
+    AI Visibility Score = 40% Ungrounded Recall + 60% Grounded Answerability
+    
+    Returns:
+        {
+            "total_score": float (0-100),
+            "ungrounded_score": float,
+            "grounded_score": float,
+            "grade": "A" | "B" | "C" | "D" | "F",
+            "summary": str,
+            "priority_actions": [str]
+        }
+    """
+    # Ungrounded score (0-100)
+    ungrounded_score = (ungrounded.get("score", 0) / ungrounded.get("max_score", 2)) * 100
+    
+    # Grounded score (0-100)
+    grounded_score = grounded.get("percentage", 0)
+    
+    # Weighted total
+    total_score = (0.4 * ungrounded_score) + (0.6 * grounded_score)
+    
+    # Grade
+    if total_score >= 80:
+        grade = "A"
+        summary = "Excellent AI Visibility - Your brand is well-known and content supports AI answers"
+    elif total_score >= 60:
+        grade = "B"
+        summary = "Good AI Visibility - Some improvements possible in content depth"
+    elif total_score >= 40:
+        grade = "C"
+        summary = "Moderate AI Visibility - Significant content gaps affect discoverability"
+    elif total_score >= 20:
+        grade = "D"
+        summary = "Poor AI Visibility - Major improvements needed for AI discoverability"
+    else:
+        grade = "F"
+        summary = "Critical - Brand is not visible to AI systems"
+    
+    # Priority actions
+    priority_actions = []
+    
+    if ungrounded_score < 50:
+        priority_actions.append("Increase brand presence through PR, content marketing, and industry mentions")
+    
+    if grounded_score < 50:
+        priority_actions.extend(grounded.get("recommendations", [])[:3])
+    
+    if not priority_actions:
+        priority_actions.append("Maintain current visibility and monitor for changes")
+    
+    return {
+        "total_score": round(total_score, 1),
+        "ungrounded_score": round(ungrounded_score, 1),
+        "grounded_score": round(grounded_score, 1),
+        "ungrounded_weight": "40%",
+        "grounded_weight": "60%",
+        "grade": grade,
+        "summary": summary,
+        "priority_actions": priority_actions[:5]
+    }
+
+
 def search_competitors_grounded(query: str, domain: str, max_results: int = 10) -> Dict[str, Any]:
     """
     Use Gemini with Google Search grounding to find competitors for a given domain/topic.
