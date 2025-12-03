@@ -172,6 +172,98 @@ async def scan(req: ScanRequest) -> ClientProject:
         raise HTTPException(status_code=502, detail=f"Scan failed: {e}")
 
 
+@router.post("/analysis/comprehensive")
+async def comprehensive_analysis(req: dict):
+    """
+    LLM-basierte umfassende Analyse nach dem Prinzip:
+    Scrape → LLM Parse → Strukturierte Daten
+    
+    Diese Analyse nutzt den LLM für das Content-Verständnis statt regelbasiertem Parsing.
+    """
+    try:
+        url = req.get("url")
+        if not url:
+            raise HTTPException(status_code=400, detail="URL required")
+        
+        base_url = str(url).rstrip("/")
+        parsed = urlparse(base_url)
+        hostname = parsed.netloc
+        scheme = parsed.scheme or "https"
+        
+        # Handle www variants
+        if hostname.startswith("www."):
+            hostname_alt = hostname[4:]
+        else:
+            hostname_alt = f"www.{hostname}"
+        
+        bases = [f"{scheme}://{hostname}", f"{scheme}://{hostname_alt}"]
+        
+        # Important pages to analyze
+        page_paths = [
+            "",  # Homepage
+            "/impressum",
+            "/imprint",
+            "/kontakt",
+            "/contact",
+            "/about",
+            "/ueber-uns",
+        ]
+        
+        # Collect content from multiple pages
+        all_content = []
+        scanned_pages = []
+        
+        for base in bases:
+            for path in page_paths:
+                if len(scanned_pages) >= 5:
+                    break
+                page_url = f"{base}{path}"
+                try:
+                    md, meta = await scrape_markdown(page_url)
+                    if md and len(md.strip()) > 200:
+                        all_content.append(f"\n\n=== PAGE: {page_url} ===\n\n{md}")
+                        scanned_pages.append(page_url)
+                except Exception:
+                    continue
+            if len(scanned_pages) >= 5:
+                break
+        
+        if not all_content:
+            raise HTTPException(status_code=400, detail="Could not scrape any content from the URL")
+        
+        # Combine content for LLM analysis
+        combined = "\n".join(all_content)
+        if len(combined) > 50000:
+            combined = combined[:50000]
+        
+        # Run comprehensive LLM analysis
+        analysis = analyze_page_comprehensive(combined, base_url)
+        
+        # Optionally validate critical data (NAP)
+        if analysis.get("business"):
+            validation = validate_extracted_data(
+                combined, 
+                analysis["business"], 
+                "Business/NAP"
+            )
+            analysis["business"]["_validation"] = validation
+        
+        # Add metadata
+        analysis["_meta"] = {
+            "scannedPages": scanned_pages,
+            "pagesCount": len(scanned_pages),
+            "contentLength": len(combined),
+            "analyzedAt": datetime.now().isoformat(),
+        }
+        
+        return analysis
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Comprehensive analysis failed: {e}")
+
+
 @router.post("/initial-scan")
 async def initial_scan(req: ScanRequest):
     """
