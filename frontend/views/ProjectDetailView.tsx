@@ -908,7 +908,7 @@ function AIAnalysisSection({ analysis }: { analysis: AIAnalysis }) {
 }
 
 function InitialScanResults({ scan }: { scan: InitialScanResult }) {
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["score", "analysis", "competitors"]))
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["score", "analysis", "ai-ready"]))
 
   const toggleSection = (section: string) => {
     const newExpanded = new Set(expandedSections)
