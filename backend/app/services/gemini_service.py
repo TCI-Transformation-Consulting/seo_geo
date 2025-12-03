@@ -666,6 +666,7 @@ Antworte als JSON:
         is_known = direct_data.get("known", False)
         confidence = direct_data.get("confidence", "none")
     except:
+        direct_data = {}
         is_known = False
         confidence = "none"
     
