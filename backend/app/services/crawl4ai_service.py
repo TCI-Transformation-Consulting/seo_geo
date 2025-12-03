@@ -3,41 +3,98 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Dict, List, Optional, Tuple, Set
 from urllib.parse import urlparse, urljoin
+import httpx
+from bs4 import BeautifulSoup
+import html2text
 
-from crawl4ai import AsyncWebCrawler
-# If crawl4ai doesn't export BrowserConfig or CrawlerRunConfig directly in top-level,
-# check their docs or assume defaults. The docs say:
-# async with AsyncWebCrawler() as crawler: ...
-# result = await crawler.arun(url="...")
+# Try to import crawl4ai, but don't fail if browser is not available
+try:
+    from crawl4ai import AsyncWebCrawler
+    CRAWL4AI_AVAILABLE = True
+except Exception:
+    CRAWL4AI_AVAILABLE = False
+    AsyncWebCrawler = None
 
 class Crawl4AINotConfigured(RuntimeError):
     pass
 
 
-async def scrape_markdown(url: str) -> Tuple[str, Dict[str, Any]]:
+async def _http_scrape(url: str) -> Tuple[str, Dict[str, Any]]:
     """
-    Scrape a single URL using Crawl4AI and return markdown + metadata.
+    Simple HTTP-based scraping fallback that doesn't require a browser.
     """
     try:
-        async with AsyncWebCrawler() as crawler:
-            result = await crawler.arun(url=url)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        async with httpx.AsyncClient(follow_redirects=True, timeout=30.0, headers=headers) as client:
+            r = await client.get(url)
+            if r.status_code != 200:
+                return "", {"url": url, "ok": False, "error": f"HTTP {r.status_code}"}
             
-            if not result.success:
-                return "", {"url": url, "ok": False, "error": result.error_message or "Unknown error"}
-
-            md = result.markdown or ""
-            # Fallback if markdown is empty but html exists? Crawl4AI usually handles this.
+            soup = BeautifulSoup(r.text, "html.parser")
+            
+            # Remove script and style elements
+            for script in soup(["script", "style", "nav", "header", "footer"]):
+                script.decompose()
+            
+            # Get title and description
+            title = soup.title.string.strip() if soup.title and soup.title.string else ""
+            meta_desc = soup.find("meta", attrs={"name": "description"})
+            description = meta_desc.get("content", "").strip() if meta_desc else ""
+            
+            # Convert to markdown-like text
+            h = html2text.HTML2Text()
+            h.ignore_links = False
+            h.ignore_images = True
+            h.body_width = 0
+            md = h.handle(r.text)
+            
+            # Fallback to plain text if html2text fails
+            if not md or len(md.strip()) < 50:
+                md = soup.get_text(" ", strip=True)
             
             return md, {
                 "url": url,
                 "ok": True,
-                "via": "crawl4ai",
+                "via": "httpx",
                 "length": len(md),
-                "title": result.metadata.get("title"),
-                "description": result.metadata.get("description"),
+                "title": title,
+                "description": description,
             }
     except Exception as e:
         return "", {"url": url, "ok": False, "error": str(e)}
+
+
+async def scrape_markdown(url: str) -> Tuple[str, Dict[str, Any]]:
+    """
+    Scrape a single URL and return markdown + metadata.
+    Uses HTTP fallback if crawl4ai browser is not available.
+    """
+    # Always try HTTP method first as it's more reliable
+    md, meta = await _http_scrape(url)
+    if md and len(md.strip()) > 100:
+        return md, meta
+    
+    # Try crawl4ai as fallback for JavaScript-heavy sites
+    if CRAWL4AI_AVAILABLE and AsyncWebCrawler:
+        try:
+            async with AsyncWebCrawler() as crawler:
+                result = await crawler.arun(url=url)
+                
+                if result.success and result.markdown:
+                    return result.markdown, {
+                        "url": url,
+                        "ok": True,
+                        "via": "crawl4ai",
+                        "length": len(result.markdown),
+                        "title": result.metadata.get("title") if result.metadata else None,
+                        "description": result.metadata.get("description") if result.metadata else None,
+                    }
+        except Exception:
+            pass  # Fall through to return HTTP result
+    
+    return md, meta
 
 
 async def crawl_markdown(url: str, limit: int = 10) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
