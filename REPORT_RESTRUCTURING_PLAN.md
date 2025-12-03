@@ -282,13 +282,32 @@ Summary → Scores (beide!) → AI Visibility (prominent) → Content → Tech S
 
 ---
 
-## ❓ Offene Fragen
+## ✅ USER REQUIREMENTS (Confirmed!)
 
-1. **Executive Summary**: Möchten Sie das? (Könnte für schnelle Scans nützlich sein)
-2. **Competitors**: Aktuell leer - entfernen oder behalten?
-3. **Icons**: Andere Icons gewünscht?
-4. **Navigation**: Quick-Jump-Menü oben? (z.B. "Jump to AI Visibility →")
+1. ✅ **Alles expanded by default** - Keine collapsed Sektionen
+2. ✅ **Files & Artifacts ans Ende** - Nach allen Analysen
+3. ✅ **Competitor Analysis behalten** - Wird angezeigt wenn Daten vorhanden
+4. ✅ **Informationen NICHT reduzieren** - Alle Details behalten, nur Redundanzen entfernen
+5. ✅ **Mehr Details** - Wo möglich ausbauen statt kürzen
+
+## 🎯 Key Changes
+
+**Entfernen:**
+- ❌ "Technical Highlights" Box (zu gemischt, Infos werden verteilt)
+- ❌ Executive Summary (nicht gewünscht)
+- ❌ Duplikate (Score, Heading Structure mehrfach)
+
+**Neu strukturieren:**
+1. Scores zusammen oben
+2. AI Visibility prominent (Position 2)
+3. Content → Tech SEO → Competitors → Questions → Issues → Files (am Ende!)
+
+**Beibehalten & Ausbauen:**
+- ✅ Alle Details in Content Analysis
+- ✅ Alle Details in Technical SEO
+- ✅ Competitor Section (wenn Daten vorhanden)
+- ✅ Alle Fragen, Issues, Opportunities
 
 ---
 
-Soll ich mit der Implementierung beginnen? Oder möchten Sie Anpassungen am Plan?
+**Ready für Implementierung!** Soll ich beginnen?
