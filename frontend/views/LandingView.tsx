@@ -139,15 +139,17 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
 
     try {
       const scanResult = await initialScan(normalizedUrl)
-      clearInterval(progressInterval)
-      setScanProgress(100)
-      setScanStatus("Analysis complete!")
+      setScanProgress(82)
+      setScanStatus("Initial scan complete, running deep analysis...")
 
       // Attempt deep analysis; use real backend heuristics for topics and content gaps
       let analysisError: string | undefined
       let aiAnalysis: any | undefined
       try {
+        setScanStatus("Extracting content chunks...")
         const chunksRes = await getContentChunks(normalizedUrl, 10)
+        setScanProgress(85)
+        
         const rawQuestions = (chunksRes?.chunks || [])
           .map((c: any) => String(c?.question || ""))
           .filter(Boolean)
@@ -162,21 +164,28 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
         ).slice(0, 8)
 
         // Topic recognition and content gaps (backend will fetch HTML if content omitted)
+        setScanStatus("Running topic recognition...")
         const topic = await postTopicRecognition(
           normalizedUrl,
           "",
           (scanResult as any)?.contentAnalysis?.title
         )
+        setScanProgress(88)
+        
+        setScanStatus("Analyzing content gaps...")
         const gap = await postContentGap(
           normalizedUrl,
           "",
           (scanResult as any)?.contentAnalysis?.title,
           topic?.industry
         )
+        setScanProgress(91)
 
         // NAP audit
+        setScanStatus("Auditing NAP data...")
         const napRes = await postNapAudit(normalizedUrl)
         const nap = (napRes as any)?.nap || {}
+        setScanProgress(94)
 
         aiAnalysis = {
           topicRecognition: {
