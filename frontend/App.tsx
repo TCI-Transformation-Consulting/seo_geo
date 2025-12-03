@@ -99,8 +99,8 @@ function App() {
     <div className="flex h-screen bg-slate-900 text-slate-50 font-sans">
       <Sidebar currentView={currentView} onNavigate={handleNavigate} />
 
-      <main className="flex-1 ml-64 relative overflow-auto">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-cyan-500 to-slate-900 z-50"></div>
+      <main className="flex-1 ml-72 relative overflow-auto">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-cyan-500 to-slate-900 z-10"></div>
         {renderContent()}
       </main>
     </div>
