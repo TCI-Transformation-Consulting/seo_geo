@@ -744,11 +744,18 @@ function AIAnalysisSection({ analysis }: { analysis: AIAnalysis }) {
                     Ungrounded Recall (40%)
                   </h4>
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="text-2xl font-bold text-white">{analysis.aiVisibility.ungroundedScore}/100</div>
+                    <div className={`text-2xl font-bold ${analysis.aiVisibility.ungroundedScore === 0 ? "text-red-400" : "text-white"}`}>
+                      {analysis.aiVisibility.ungroundedScore}/100
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-400 mb-2">
                     How well AI remembers your brand without being given your website content.
                   </p>
+                  {analysis.aiVisibility.ungroundedScore === 0 && (
+                    <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded text-xs text-amber-300">
+                      <strong>⚠️ Brand not in AI training data.</strong> Increase visibility through PR, publications, and online presence.
+                    </div>
+                  )}
                 </div>
 
                 {/* Grounded Answerability */}
