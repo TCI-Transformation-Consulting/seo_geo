@@ -245,7 +245,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
           },
           userQuestions: filteredQuestions.length > 0 ? filteredQuestions : (seo?.keyMessages || []),
         }
-        setScanProgress(94)
+        updateProgress(84, "Processing AI insights...")
       } catch (e: any) {
         analysisError = e?.message || "Comprehensive analysis failed"
         console.warn("Comprehensive analysis error:", e)
@@ -254,7 +254,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
       // Run AI Visibility Analysis (non-blocking)
       let aiVisibility: any | undefined
       try {
-        setScanStatus("Running AI Visibility analysis...")
+        updateProgress(86, "Running AI Visibility analysis...")
         const visibilityResult = await runAIVisibilityAnalysis(normalizedUrl, "")
         aiVisibility = visibilityResult
         
@@ -276,7 +276,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
             groundedResults: visibilityResult?.grounded?.results || [],
           }
         }
-        setScanProgress(96)
+        updateProgress(92, "AI Visibility analysis complete...")
       } catch (e: any) {
         console.warn("AI Visibility analysis failed (non-blocking):", e)
       }
