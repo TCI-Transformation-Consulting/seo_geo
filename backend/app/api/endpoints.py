@@ -40,6 +40,8 @@ from ..models.schemas import (
     GroundedAnalysisResponse,
     URLListRequest,
     URLListResponse,
+    AIVisibilityRequest,
+    AIVisibilityResponse,
 )
 from ..services.crawler_service import scan_site, fetch_html, compute_audit_scores, DEFAULT_USER_AGENT
 from ..services.crawl4ai_service import scrape_markdown, crawl_markdown, Crawl4AINotConfigured
