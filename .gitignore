@@ -32,3 +32,7 @@ backend/.env.*.local
 backend/config.py
 backend/.venv/
 .venv/
+-e 
+# Environment files
+*.env
+*.env.*
