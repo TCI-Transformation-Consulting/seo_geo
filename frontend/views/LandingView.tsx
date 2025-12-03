@@ -249,6 +249,36 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
         console.warn("Comprehensive analysis error:", e)
       }
 
+      // Run AI Visibility Analysis (non-blocking)
+      let aiVisibility: any | undefined
+      try {
+        setScanStatus("Running AI Visibility analysis...")
+        const visibilityResult = await runAIVisibilityAnalysis(normalizedUrl, "")
+        aiVisibility = visibilityResult
+        
+        // Update user questions with the better ones from visibility analysis
+        if (aiAnalysis && visibilityResult?.user_questions?.length > 0) {
+          aiAnalysis.userQuestions = visibilityResult.user_questions
+        }
+        
+        // Add visibility data to aiAnalysis
+        if (aiAnalysis) {
+          aiAnalysis.aiVisibility = {
+            totalScore: visibilityResult?.visibility_score?.total_score ?? 0,
+            grade: visibilityResult?.visibility_score?.grade ?? "F",
+            summary: visibilityResult?.visibility_score?.summary ?? "",
+            ungroundedScore: visibilityResult?.ungrounded?.score ?? 0,
+            groundedPercentage: visibilityResult?.grounded?.percentage ?? 0,
+            priorityActions: visibilityResult?.visibility_score?.priority_actions || [],
+            contentGaps: visibilityResult?.grounded?.content_gaps || [],
+            groundedResults: visibilityResult?.grounded?.results || [],
+          }
+        }
+        setScanProgress(96)
+      } catch (e: any) {
+        console.warn("AI Visibility analysis failed (non-blocking):", e)
+      }
+
       // Optional batch run based on selected scope
       let batchSummary: any | undefined
       try {
