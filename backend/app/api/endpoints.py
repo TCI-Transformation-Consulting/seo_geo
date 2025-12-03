@@ -59,6 +59,8 @@ from ..services.gemini_service import (
     search_competitors_grounded,
     grounded_competitor_analysis,
     analyze_ai_visibility,
+    analyze_page_comprehensive,
+    validate_extracted_data,
 )
 from ..services.generation_service import (
     generate_openapi_from_markdown,
