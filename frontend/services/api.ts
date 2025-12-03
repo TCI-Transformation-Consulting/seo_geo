@@ -379,6 +379,70 @@ export const generateLocalBusinessSchema = async (url: string, content?: string,
 export const generateLlmsTxt = async (url: string) =>
   postJson<{ llms_txt: string }>("/generation/llms", { url }, 60000)
 
+// Comprehensive LLM-based analysis (Scrape → LLM Parse → Structured Data)
+export const runComprehensiveAnalysis = async (url: string) =>
+  postJson<{
+    business: {
+      name: string | null
+      legalForm: string | null
+      address: string | null
+      phone: string | null
+      email: string | null
+      website: string | null
+      foundOnPage: string | null
+      _validation?: { valid: boolean; confidence: number; reasoning: string }
+    }
+    seo: {
+      title: string | null
+      description: string | null
+      h1: string[]
+      h1Assessment: string | null
+      keyMessages: string[]
+    }
+    content: {
+      primaryTopic: string | null
+      secondaryTopics: string[]
+      industry: string | null
+      contentType: string | null
+      targetAudience: string | null
+      tone: string | null
+      language: string | null
+    }
+    entities: {
+      people: { name: string; role: string }[]
+      organizations: string[]
+      locations: string[]
+      products: string[]
+      keywords: string[]
+    }
+    schema: {
+      detected: string[]
+      recommended: string[]
+      reasoning: string | null
+    }
+    credibility: {
+      hasImpressum: boolean
+      hasContact: boolean
+      hasSocialProof: boolean
+      trustSignals: string[]
+      score: number
+    }
+    contentQuality: {
+      hasUniqueContent: boolean
+      hasFAQ: boolean
+      hasPricing: boolean
+      hasTestimonials: boolean
+      missingElements: string[]
+      score: number
+    }
+    _meta: {
+      scannedPages: string[]
+      pagesCount: number
+      contentLength: number
+      analyzedAt: string
+    }
+  }>("/analysis/comprehensive", { url }, 120000)
+
 export const runPackageAnalysis = async (
   url: string,
   packageId: string,
