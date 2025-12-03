@@ -328,8 +328,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
         }
 
       // Competitor discovery (Grounded with SERP fallback on backend)
-      setScanStatus("Searching for competitors...")
-      setScanProgress(98)
+      updateProgress(98, "Searching for competitors...")
       let competitorsMapped: any[] = []
       try {
         const compRes = await postCompetitorSearch(hostname, hostname, 5)
