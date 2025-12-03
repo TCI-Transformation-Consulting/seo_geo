@@ -280,20 +280,27 @@ def generate_jsonld(schema_type: str, markdown: str) -> str:
 
 def extract_nap_json(markdown: str) -> Dict[str, Any]:
     """
-    Extract Name, Address, Phone as structured JSON from markdown.
-    Returns a dict with keys: name, address, phone (values may be None if missing).
+    Extract Name, Address, Phone, Email as structured JSON from markdown.
+    Returns a dict with keys: name, address, phone, email (values may be None if missing).
     """
     client = _get_client()
 
     system_instruction = (
-        "Extrahiere Name (Unternehmensname), Adresse und Telefonnummer aus dem gegebenen Markdown. "
-        "Antworte NUR als JSON-Objekt mit den Feldern 'name', 'address', 'phone'. "
-        "Wenn ein Feld fehlt, setze es auf null."
+        "Du bist ein Experte für die Extraktion von Geschäftsinformationen. "
+        "Extrahiere folgende Informationen aus dem gegebenen Text:\n"
+        "1. name: Der offizielle Unternehmensname/Firmenname (z.B. 'Neue Werte GmbH', 'Example Corp')\n"
+        "2. address: Die vollständige Geschäftsadresse (Straße, PLZ, Stadt)\n"
+        "3. phone: Die Telefonnummer (inkl. Vorwahl)\n"
+        "4. email: Die Kontakt-E-Mail-Adresse\n\n"
+        "Suche besonders in Impressum-Abschnitten, Kontaktbereichen, Footer-Texten.\n"
+        "Antworte NUR als JSON-Objekt mit den Feldern 'name', 'address', 'phone', 'email'. "
+        "Wenn ein Feld nicht gefunden wird, setze es auf null."
     )
 
     contents = (
-        "Markdown folgt. Extrahiere NAP und gib nur JSON zurück.\n\n"
-        f"{markdown}"
+        "Analysiere den folgenden Website-Inhalt und extrahiere die Geschäftsinformationen (NAP+E).\n"
+        "Achte besonders auf Impressum, Kontakt, Footer-Bereiche.\n\n"
+        f"WEBSITE-INHALT:\n{markdown}"
     )
 
     response = client.models.generate_content(
@@ -314,8 +321,9 @@ def extract_nap_json(markdown: str) -> Dict[str, Any]:
     name = data.get("name") if isinstance(data, dict) else None
     address = data.get("address") if isinstance(data, dict) else None
     phone = data.get("phone") if isinstance(data, dict) else None
+    email = data.get("email") if isinstance(data, dict) else None
 
-    return {"name": name, "address": address, "phone": phone}
+    return {"name": name, "address": address, "phone": phone, "email": email}
 
 
 def fact_check_claim(claim: str, context_markdown: str) -> Dict[str, Any]:
