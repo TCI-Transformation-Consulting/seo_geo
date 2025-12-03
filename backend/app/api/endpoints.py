@@ -1825,15 +1825,26 @@ async def competitor_search(req: CompetitorSearchRequest) -> CompetitorSearchRes
     Fallback: SERP (DuckDuckGo HTML) when grounded returns none.
     """
     try:
-        result = search_competitors_grounded(
-            query=req.query,
-            domain=str(req.domain),
-            max_results=req.max_results,
-            company_profile=req.company_profile
-        )
-        comps = result.get("competitors", [])
-        sq = result.get("search_queries", [])
-        cites = result.get("citations", [])
+        # Try Gemini with Google Search grounding first
+        # Note: This requires Vertex AI and will fail with regular Gemini API
+        comps = []
+        sq = []
+        cites = []
+        
+        try:
+            result = search_competitors_grounded(
+                query=req.query,
+                domain=str(req.domain),
+                max_results=req.max_results,
+                company_profile=req.company_profile
+            )
+            comps = result.get("competitors", [])
+            sq = result.get("search_queries", [])
+            cites = result.get("citations", [])
+        except Exception as e:
+            # Gemini grounding failed (e.g., not using Vertex AI)
+            # Fall through to SERP fallback
+            pass
 
         # Fallback via SERP if grounded yields no competitors
         if not comps:
