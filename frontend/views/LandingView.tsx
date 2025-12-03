@@ -367,7 +367,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
           })),
           technicalStatus: ts,
           contentAnalysis: scanResult.contentAnalysis || { title: "", description: "", hasFaqContent: false, headingStructure: { h1: 0, h2: 0, h3: 0 } },
-          analysis: ((scanResult as any).analysis || aiAnalysis),
+          analysis: (aiAnalysis || (scanResult as any).analysis),
           analysisError: analysisError,
           batchSummary,
           competitors: competitorsMapped,
