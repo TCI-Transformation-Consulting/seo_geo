@@ -1641,7 +1641,7 @@ const GenerateFilesSection: React.FC<{ project: ClientProject }> = ({ project })
       name: "JSON-LD Schema", 
       description: "Structured data for search engines",
       icon: FileCode,
-      generate: () => generateJsonLd(project.url),
+      generate: () => generateJsonLd(project.url, "Organization"),
       extractKey: "jsonld"
     },
     { 
