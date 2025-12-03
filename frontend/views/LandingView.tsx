@@ -336,7 +336,21 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
       updateProgress(98, "Searching for competitors...")
       let competitorsMapped: any[] = []
       try {
-        const compRes = await postCompetitorSearch(hostname, hostname, 5)
+        // Build company profile from comprehensive data
+        const companyProfile = comprehensiveData ? {
+          business: {
+            name: comprehensiveData.business?.name,
+            address: comprehensiveData.business?.address,
+          },
+          content: {
+            industry: comprehensiveData.content?.industry,
+            primaryTopic: comprehensiveData.content?.primaryTopic,
+            products: comprehensiveData.content?.products || [],
+            targetAudience: comprehensiveData.content?.targetAudience,
+          }
+        } : undefined
+        
+        const compRes = await postCompetitorSearch(hostname, hostname, 5, companyProfile)
         const items = (compRes as any)?.competitors || []
         competitorsMapped = items.map((it: any) => ({
           name: it?.name || it?.url || "Competitor",
