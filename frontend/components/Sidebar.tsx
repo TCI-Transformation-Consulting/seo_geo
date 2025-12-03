@@ -30,7 +30,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
   }, [])
 
   return (
-    <div className="w-72 glass-sidebar flex flex-col h-full fixed left-0 top-0 z-10">
+    <div className="w-72 glass-sidebar flex flex-col h-full fixed left-0 top-0 z-50">
       {/* Logo */}
       <div
         className="p-6 flex items-center gap-4 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-all duration-300"
