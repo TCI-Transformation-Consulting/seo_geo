@@ -555,9 +555,13 @@ function AIAnalysisSection({ analysis }: { analysis: AIAnalysis }) {
             <MapPin className="w-5 h-5 text-cyan-400" />
             <span className="font-medium">Business Information (NAP)</span>
             {analysis.napData.isComplete ? (
-              <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs rounded-full">Complete</span>
+              <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs rounded-full">
+                Complete {analysis.napData.completeness && `(${analysis.napData.completeness})`}
+              </span>
             ) : (
-              <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded-full">Incomplete</span>
+              <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded-full">
+                Incomplete {analysis.napData.completeness && `(${analysis.napData.completeness})`}
+              </span>
             )}
           </div>
           {expandedSections.has("nap") ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -602,6 +606,28 @@ function AIAnalysisSection({ analysis }: { analysis: AIAnalysis }) {
                 </div>
               </div>
             </div>
+            
+            {/* Scanned Pages Info */}
+            {analysis.napData.scannedPages && analysis.napData.scannedPages.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-slate-700">
+                <h4 className="text-xs font-medium text-slate-500 uppercase mb-2">
+                  Scanned Pages ({analysis.napData.scannedPages.length})
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {analysis.napData.scannedPages.map((page: string, i: number) => (
+                    <a
+                      key={i}
+                      href={page}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs px-2 py-1 bg-slate-700/50 text-slate-300 hover:text-cyan-400 rounded truncate max-w-xs"
+                    >
+                      {new URL(page).pathname || "/"}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
