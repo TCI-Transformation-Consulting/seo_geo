@@ -395,7 +395,7 @@ function CompetitorCard({ competitor, userScore }: { competitor: CompetitorResul
 }
 
 function AIAnalysisSection({ analysis }: { analysis: AIAnalysis }) {
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["topics", "content", "nap"]))
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["topics", "content", "nap", "ai-visibility"]))
 
   const toggleSection = (section: string) => {
     const newExpanded = new Set(expandedSections)
