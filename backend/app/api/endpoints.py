@@ -884,9 +884,8 @@ async def nap_audit(req: NAPAuditRequest) -> NAPAuditResponse:
             f"{scheme}://{hostname_alt}",
         ]
         
-        # Common NAP page paths
+        # Common NAP page paths - prioritize impressum/contact pages
         nap_paths = [
-            "",  # Homepage
             "/impressum",
             "/imprint", 
             "/kontakt",
@@ -895,10 +894,7 @@ async def nap_audit(req: NAPAuditRequest) -> NAPAuditResponse:
             "/ueber-uns",
             "/about-us",
             "/legal",
-            "/datenschutz",
-            "/privacy",
-            "/agb",
-            "/team",
+            "",  # Homepage last
         ]
         
         # Build full URL list
@@ -908,64 +904,78 @@ async def nap_audit(req: NAPAuditRequest) -> NAPAuditResponse:
                 nap_pages.append(f"{base}{path}")
         
         # Collect markdown from all accessible pages
-        all_content = []
+        all_nap_sections = []
         scanned_pages = []
         
+        # NAP-relevant keywords to look for
+        nap_keywords = [
+            "impressum", "kontakt", "contact", "address", "adresse",
+            "telefon", "phone", "email", "e-mail", "gmbh", "ug", "ag", "inc", "ltd",
+            "geschäftsführer", "managing director", "ceo", "inhaber",
+            "straße", "street", "plz", "postleitzahl", "berlin", "münchen", "hamburg"
+        ]
+        
         for page_url in nap_pages:
+            if len(scanned_pages) >= 5:  # Limit to 5 pages
+                break
+                
             try:
                 md, _ = await scrape_markdown(page_url)
                 if md and len(md.strip()) > 100:
-                    # Check if this page has NAP-relevant content
                     md_lower = md.lower()
-                    has_nap_content = any(k in md_lower for k in [
-                        "impressum", "kontakt", "contact", "address", "adresse",
-                        "telefon", "phone", "email", "e-mail", "gmbh", "ug", "ag",
-                        "geschäftsführer", "managing director", "ceo"
-                    ])
+                    
+                    # Check if this page has NAP-relevant content
+                    has_nap_content = any(k in md_lower for k in nap_keywords)
+                    
                     if has_nap_content:
-                        all_content.append(f"\n\n--- PAGE: {page_url} ---\n\n{md}")
                         scanned_pages.append(page_url)
-                        if len(scanned_pages) >= 5:  # Limit to 5 most relevant pages
-                            break
+                        
+                        # Extract the most relevant NAP section (around impressum/kontakt keywords)
+                        nap_section = ""
+                        for keyword in ["impressum", "kontakt", "contact", "imprint", "about us", "über uns"]:
+                            idx = md_lower.find(keyword)
+                            if idx >= 0:
+                                # Extract 4000 chars around the keyword
+                                start = max(0, idx - 500)
+                                end = min(len(md), idx + 3500)
+                                section = md[start:end]
+                                if len(section) > len(nap_section):
+                                    nap_section = section
+                        
+                        if not nap_section:
+                            # Take first 4000 chars if no keyword found
+                            nap_section = md[:4000]
+                        
+                        all_nap_sections.append(f"--- PAGE: {page_url} ---\n{nap_section}")
+                        
             except Exception:
-                continue  # Page doesn't exist or failed
-            
-            if len(scanned_pages) >= 5:
-                break
+                continue
         
-        if not all_content:
-            # Fallback: try to get any content from homepage
+        if not all_nap_sections:
+            # Fallback: try homepage
             for base in bases:
                 try:
                     md, _ = await scrape_markdown(base)
                     if md:
-                        all_content = [md]
+                        all_nap_sections = [md[:5000]]
                         scanned_pages = [base]
                         break
                 except Exception:
                     continue
         
-        if not all_content:
+        if not all_nap_sections:
             return NAPAuditResponse(nap=NAPData(
-                name=None,
-                address=None,
-                phone=None,
-                email=None,
-                socials=[],
-                scanned_pages=[],
-                pages_count=0,
-                completeness="0/4",
-                is_complete=False
+                name=None, address=None, phone=None, email=None,
+                socials=[], scanned_pages=[], pages_count=0,
+                completeness="0/4", is_complete=False
             ))
         
-        # Combine all content for NAP extraction
-        combined_markdown = "\n".join(all_content)
+        # Combine NAP sections (limit total size)
+        combined_content = "\n\n".join(all_nap_sections)
+        if len(combined_content) > 20000:
+            combined_content = combined_content[:20000]
         
-        # Limit content size for API
-        if len(combined_markdown) > 100000:
-            combined_markdown = combined_markdown[:100000]
-        
-        nap_raw = extract_nap_json(combined_markdown)
+        nap_raw = extract_nap_json(combined_content)
         
         # Calculate completeness
         fields_found = sum(1 for k in ["name", "address", "phone", "email"] if nap_raw.get(k))
@@ -980,7 +990,7 @@ async def nap_audit(req: NAPAuditRequest) -> NAPAuditResponse:
             scanned_pages=scanned_pages,
             pages_count=len(scanned_pages),
             completeness=f"{fields_found}/4",
-            is_complete=fields_found >= 3  # At least name, address, phone
+            is_complete=fields_found >= 3
         )
         
         return NAPAuditResponse(nap=nap_data)
