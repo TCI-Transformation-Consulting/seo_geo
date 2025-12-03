@@ -14,14 +14,34 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
   const [backendStatus, setBackendStatus] = useState<"checking" | "online" | "offline">("checking")
+  const [consecutiveFailures, setConsecutiveFailures] = useState(0)
 
   useEffect(() => {
     const checkStatus = async () => {
       try {
         const res = await getHealth()
-        setBackendStatus(res?.status?.toLowerCase() === "ok" ? "online" : "offline")
-      } catch {
-        setBackendStatus("offline")
+        if (res?.status?.toLowerCase() === "ok") {
+          setBackendStatus("online")
+          setConsecutiveFailures(0) // Reset failure counter on success
+        } else {
+          // Only mark offline after multiple failures
+          setConsecutiveFailures(prev => {
+            const newCount = prev + 1
+            if (newCount >= 2) { // Only show offline after 2 consecutive failures
+              setBackendStatus("offline")
+            }
+            return newCount
+          })
+        }
+      } catch (error) {
+        // Backend might be busy with long-running analysis
+        setConsecutiveFailures(prev => {
+          const newCount = prev + 1
+          if (newCount >= 2) { // Only show offline after 2 consecutive failures (60 seconds)
+            setBackendStatus("offline")
+          }
+          return newCount
+        })
       }
     }
     checkStatus()
