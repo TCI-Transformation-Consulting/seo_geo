@@ -34,6 +34,8 @@ from ..models.schemas import (
     MCPConfigGenerateResponse,
     AIManifestGenerateRequest,
     AIManifestGenerateResponse,
+    LlmsTxtGenerateRequest,
+    LlmsTxtGenerateResponse,
     CompetitorSearchRequest,
     CompetitorSearchResponse,
     GroundedAnalysisRequest,
