@@ -1046,12 +1046,12 @@ function InitialScanResults({ scan }: { scan: InitialScanResult }) {
               </div>
               <div
                 className={`text-lg font-semibold ${
-                  scan.technicalStatus?.agentReadiness ? "text-emerald-400" : "text-slate-300"
+                  scan.technicalStatus?.agentReadiness ? "text-emerald-400" : "text-amber-400"
                 }`}
               >
-                {scan.technicalStatus?.agentReadiness ? "Ready for AI agents" : "Limited/No AI agent integrations"}
+                {scan.technicalStatus?.agentReadiness ? "Ready for AI agents" : "Basic Setup"}
               </div>
-              <div className="text-xs text-slate-500 mt-2">Detected integrations</div>
+              <div className="text-xs text-slate-500 mt-2">AI Integration Status</div>
               <div className="mt-2 flex flex-wrap gap-2">
                 {[
                   { key: "llmsTxtFound", label: "llms.txt" },
@@ -1063,13 +1063,13 @@ function InitialScanResults({ scan }: { scan: InitialScanResult }) {
                   return (
                     <span
                       key={k.key}
-                      className={`text-xs px-2 py-0.5 rounded border ${
+                      className={`text-xs px-2 py-1 rounded flex items-center gap-1 ${
                         has
-                          ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
-                          : "bg-slate-700/50 text-slate-400 border-slate-600"
+                          ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"
+                          : "bg-red-500/10 text-red-300 border border-red-500/30"
                       }`}
                     >
-                      {k.label}
+                      {has ? "✓" : "✗"} {k.label}
                     </span>
                   )
                 })}
