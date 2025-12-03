@@ -265,11 +265,16 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, onScanComp
         
         // Add visibility data to aiAnalysis
         if (aiAnalysis) {
+          // Convert ungrounded score (0-2 scale) to 0-100 scale
+          const ungroundedRawScore = visibilityResult?.ungrounded?.score ?? 0
+          const ungroundedMaxScore = visibilityResult?.ungrounded?.max_score ?? 2
+          const ungroundedScore = (ungroundedRawScore / ungroundedMaxScore) * 100
+          
           aiAnalysis.aiVisibility = {
             totalScore: visibilityResult?.visibility_score?.total_score ?? 0,
             grade: visibilityResult?.visibility_score?.grade ?? "F",
             summary: visibilityResult?.visibility_score?.summary ?? "",
-            ungroundedScore: visibilityResult?.ungrounded?.score ?? 0,
+            ungroundedScore: Math.round(ungroundedScore),
             groundedPercentage: visibilityResult?.grounded?.percentage ?? 0,
             priorityActions: visibilityResult?.visibility_score?.priority_actions || [],
             contentGaps: visibilityResult?.grounded?.content_gaps || [],
