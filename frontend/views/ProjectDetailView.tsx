@@ -1332,4 +1332,5 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
   )
 }
 
+export { ProjectDetailView }
 export default ProjectDetailView
