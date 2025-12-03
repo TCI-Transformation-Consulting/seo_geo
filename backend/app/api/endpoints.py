@@ -863,27 +863,49 @@ async def nap_audit(req: NAPAuditRequest) -> NAPAuditResponse:
     - /impressum, /imprint
     - /kontakt, /contact
     - /about, /ueber-uns
+    Also handles www/non-www redirects.
     """
     from ..models.schemas import NAPData
     
     try:
         base_url = str(req.url).rstrip("/")
         parsed = urlparse(base_url)
-        base = f"{parsed.scheme}://{parsed.netloc}"
+        hostname = parsed.netloc
+        scheme = parsed.scheme or "https"
         
-        # Pages to check for NAP data
-        nap_pages = [
-            base_url,  # Homepage
-            f"{base}/impressum",
-            f"{base}/imprint", 
-            f"{base}/kontakt",
-            f"{base}/contact",
-            f"{base}/about",
-            f"{base}/ueber-uns",
-            f"{base}/about-us",
-            f"{base}/legal",
-            f"{base}/datenschutz",  # Often contains company info
+        # Handle www/non-www variants
+        if hostname.startswith("www."):
+            hostname_alt = hostname[4:]
+        else:
+            hostname_alt = f"www.{hostname}"
+        
+        bases = [
+            f"{scheme}://{hostname}",
+            f"{scheme}://{hostname_alt}",
         ]
+        
+        # Common NAP page paths
+        nap_paths = [
+            "",  # Homepage
+            "/impressum",
+            "/imprint", 
+            "/kontakt",
+            "/contact",
+            "/about",
+            "/ueber-uns",
+            "/about-us",
+            "/legal",
+            "/datenschutz",
+            "/privacy",
+            "/agb",
+            "/team",
+        ]
+        
+        # Build full URL list
+        nap_pages = []
+        for base in bases:
+            for path in nap_paths:
+                nap_pages.append(f"{base}{path}")
         
         # Collect markdown from all accessible pages
         all_content = []
@@ -893,16 +915,48 @@ async def nap_audit(req: NAPAuditRequest) -> NAPAuditResponse:
             try:
                 md, _ = await scrape_markdown(page_url)
                 if md and len(md.strip()) > 100:
-                    all_content.append(f"\n\n--- PAGE: {page_url} ---\n\n{md}")
-                    scanned_pages.append(page_url)
+                    # Check if this page has NAP-relevant content
+                    md_lower = md.lower()
+                    has_nap_content = any(k in md_lower for k in [
+                        "impressum", "kontakt", "contact", "address", "adresse",
+                        "telefon", "phone", "email", "e-mail", "gmbh", "ug", "ag",
+                        "geschäftsführer", "managing director", "ceo"
+                    ])
+                    if has_nap_content:
+                        all_content.append(f"\n\n--- PAGE: {page_url} ---\n\n{md}")
+                        scanned_pages.append(page_url)
+                        if len(scanned_pages) >= 5:  # Limit to 5 most relevant pages
+                            break
             except Exception:
                 continue  # Page doesn't exist or failed
+            
+            if len(scanned_pages) >= 5:
+                break
         
         if not all_content:
-            # Fallback to just homepage
-            md, _ = await scrape_markdown(base_url)
-            all_content = [md]
-            scanned_pages = [base_url]
+            # Fallback: try to get any content from homepage
+            for base in bases:
+                try:
+                    md, _ = await scrape_markdown(base)
+                    if md:
+                        all_content = [md]
+                        scanned_pages = [base]
+                        break
+                except Exception:
+                    continue
+        
+        if not all_content:
+            return NAPAuditResponse(nap=NAPData(
+                name=None,
+                address=None,
+                phone=None,
+                email=None,
+                socials=[],
+                scanned_pages=[],
+                pages_count=0,
+                completeness="0/4",
+                is_complete=False
+            ))
         
         # Combine all content for NAP extraction
         combined_markdown = "\n".join(all_content)
