@@ -1120,6 +1120,24 @@ async def generation_ai_manifest(req: AIManifestGenerateRequest) -> AIManifestGe
         raise
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"AI manifest generation failed: {e}")
+
+
+@router.post("/generation/llms", response_model=LlmsTxtGenerateResponse)
+async def generation_llms_txt(req: LlmsTxtGenerateRequest) -> LlmsTxtGenerateResponse:
+    """
+    Generate a llms.txt file for the given URL.
+    llms.txt describes how LLMs should interact with the site content.
+    """
+    try:
+        md, _ = await scrape_markdown(str(req.url))
+        llms_txt = generate_llms_txt_from_markdown(md)
+        return LlmsTxtGenerateResponse(llms_txt=llms_txt)
+    except (Crawl4AINotConfigured, GeminiNotConfigured) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"llms.txt generation failed: {e}")
     
     
 # --- URL enumeration (sitemap + crawl fallback) ---
