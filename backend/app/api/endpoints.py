@@ -516,9 +516,35 @@ async def initial_scan(req: ScanRequest):
         # Agent readiness if any AI integration artefact exists
         agent_readiness = bool(llms_found or ai_manifest_found or mcp_config_found or openapi_found)
 
-        # Heuristic score from crawler_service
+        # Heuristic score from crawler_service + AI readiness penalties
         audit = compute_audit_scores(soup, html)
-        score = int(sum(audit.get(k, 0) for k in ["structure", "structured_data", "content"]) / 3) if audit else 60
+        base_score = int(sum(audit.get(k, 0) for k in ["structure", "structured_data", "content"]) / 3) if audit else 60
+        
+        # AI Readiness Score Adjustments (stricter evaluation)
+        ai_readiness_score = base_score
+        
+        # Penalty for missing critical AI artifacts (max -40 points total)
+        artifact_penalties = 0
+        if not llms_found:
+            artifact_penalties += 8  # -8 for missing llms.txt
+        if not ai_manifest_found:
+            artifact_penalties += 8  # -8 for missing AI manifest
+        if not mcp_config_found:
+            artifact_penalties += 6  # -6 for missing MCP config
+        if not openapi_found:
+            artifact_penalties += 6  # -6 for missing OpenAPI spec
+        if not rss_found:
+            artifact_penalties += 6  # -6 for missing RSS feed
+        if not robots_ai_optimized:
+            artifact_penalties += 6  # -6 for missing AI crawler directives
+        
+        # Schema completeness penalty (max -20 points)
+        if schema_completeness < 80:
+            artifact_penalties += int((80 - schema_completeness) / 4)  # Up to -20 points
+        
+        # Apply penalties
+        ai_readiness_score = max(0, min(100, ai_readiness_score - artifact_penalties))
+        score = ai_readiness_score
 
         # Build SEO + GEO findings and opportunities (lightweight heuristics)
         findings: list[dict[str, Any]] = []
