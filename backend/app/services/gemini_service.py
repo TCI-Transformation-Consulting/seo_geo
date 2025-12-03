@@ -993,10 +993,10 @@ def calculate_ai_visibility_score(ungrounded: Dict[str, Any], grounded: Dict[str
     }
 
 
-def search_competitors_grounded(query: str, domain: str, max_results: int = 10) -> Dict[str, Any]:
+def search_competitors_grounded(query: str, domain: str, max_results: int = 10, company_profile: Dict[str, Any] = None) -> Dict[str, Any]:
     """
     Use Gemini with Google Search grounding to find competitors for a given domain/topic.
-    Returns grounded results with citations from real web sources.
+    Uses company profile as context for better matching.
     
     Returns: {
         "competitors": [{"name": str, "url": str, "description": str, "relevance": str}],
@@ -1015,31 +1015,61 @@ def search_competitors_grounded(query: str, domain: str, max_results: int = 10) 
         google_search=types.GoogleSearch()
     )
     
+    # Extract company profile details
+    profile_context = ""
+    if company_profile:
+        business = company_profile.get('business', {})
+        content = company_profile.get('content', {})
+        
+        profile_context = f"""
+FIRMENPROFIL:
+- Name: {business.get('name', 'N/A')}
+- Branche: {content.get('industry', 'N/A')}
+- Hauptthema: {content.get('primaryTopic', 'N/A')}
+- Dienstleistungen: {', '.join(content.get('products', [])[:5])}
+- Zielgruppe: {content.get('targetAudience', 'N/A')}
+- Standort: {business.get('address', 'N/A')}
+"""
+    
     system_instruction = (
-        "Du bist ein Markt- und Wettbewerbsanalyst. "
-        "Suche nach den wichtigsten Wettbewerbern für die gegebene Domain und das Thema. "
-        "Nutze die Google-Suche, um aktuelle und relevante Wettbewerber zu finden. "
-        "Antworte NUR als JSON-Objekt mit dem Feld 'competitors' (Liste von Objekten mit "
-        "'name' (Firmenname), 'url' (Website-URL), 'description' (kurze Beschreibung), "
-        "'relevance' (warum relevant als Wettbewerber)). "
-        "Maximal " + str(max_results) + " Wettbewerber."
+        "Du bist ein präziser Wettbewerbsanalyst. "
+        "Nutze Google Search um AKTUELLE, EXISTIERENDE Wettbewerber zu finden. "
+        "Suche nach Firmen die:\n"
+        "1. In der gleichen Branche tätig sind\n"
+        "2. Ähnliche Dienstleistungen/Produkte anbieten\n"
+        "3. Die gleiche Zielgruppe ansprechen\n\n"
+        "Antworte als JSON:\n"
+        "{\n"
+        '  "competitors": [\n'
+        '    {"name": "Firmenname", "url": "https://...", "description": "Was sie machen", "relevance": "Warum Wettbewerber"}\n'
+        "  ]\n"
+        "}\n\n"
+        f"Maximal {max_results} Wettbewerber. ALLE Felder müssen ausgefüllt sein!"
     )
     
-    contents = (
-        f"Finde die wichtigsten Wettbewerber für folgende Website:\n"
-        f"Domain: {domain}\n"
-        f"Suchkontext: {query}\n\n"
-        f"Suche nach direkten Wettbewerbern, die ähnliche Produkte/Dienstleistungen anbieten. "
-        f"Nutze die Google-Suche um aktuelle Informationen zu finden."
-    )
+    contents = f"""Finde die wichtigsten direkten Wettbewerber für:
+
+ZIEL-WEBSITE: {domain}
+{profile_context}
+
+Suche mit Google nach Firmen die ein ähnliches Profil haben.
+Fokussiere auf DIREKTE Wettbewerber (gleiche Branche, ähnliche Services).
+
+WICHTIG:
+- NUR existierende, aktive Firmen
+- NUR Firmen mit funktionierenden Websites
+- Bevorzuge Firmen aus dem gleichen geografischen Raum
+- Keine generischen Beispiele!
+"""
     
     config = types.GenerateContentConfig(
         tools=[grounding_tool],
         system_instruction=system_instruction,
+        response_mime_type="application/json",
     )
     
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-2.0-flash",  # Using stable 2.0 instead of 2.5
         contents=contents,
         config=config,
     )
