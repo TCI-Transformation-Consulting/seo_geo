@@ -1828,7 +1828,8 @@ async def competitor_search(req: CompetitorSearchRequest) -> CompetitorSearchRes
         result = search_competitors_grounded(
             query=req.query,
             domain=str(req.domain),
-            max_results=req.max_results
+            max_results=req.max_results,
+            company_profile=req.company_profile
         )
         comps = result.get("competitors", [])
         sq = result.get("search_queries", [])
