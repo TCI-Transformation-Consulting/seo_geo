@@ -1215,6 +1215,12 @@ function InitialScanResults({ scan }: { scan: InitialScanResult }) {
                   Multiple H1 tags detected - consider using only one H1 per page
                 </div>
               )}
+              {scan.analysis?.seoData?.h1Assessment && (
+                <div className="mt-3 pt-3 border-t border-slate-700">
+                  <div className="text-xs text-slate-500 mb-1">AI Assessment:</div>
+                  <p className="text-sm text-slate-300">{scan.analysis.seoData.h1Assessment}</p>
+                </div>
+              )}
             </div>
           </div>
         )}
