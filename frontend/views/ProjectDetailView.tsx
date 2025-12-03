@@ -814,32 +814,47 @@ function AIAnalysisSection({ analysis }: { analysis: AIAnalysis }) {
                       <div
                         key={i}
                         className={`p-3 rounded-lg border ${
-                          result.found_in_content
+                          result.answerable && result.answer_quality !== "none"
                             ? "bg-emerald-500/10 border-emerald-500/20"
                             : "bg-red-500/10 border-red-500/20"
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <p className="text-sm font-medium text-white flex-1">Q: {result.question}</p>
-                          {result.found_in_content ? (
+                          {result.answerable && result.answer_quality !== "none" ? (
                             <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                           ) : (
                             <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
                           )}
                         </div>
-                        <p className="text-xs text-slate-400 mb-1">
-                          <strong>Answer:</strong> {result.answer}
-                        </p>
+                        {result.answer_preview && (
+                          <p className="text-xs text-slate-400 mb-2">
+                            <strong>Answer:</strong> {result.answer_preview}
+                          </p>
+                        )}
+                        {result.missing_info && (
+                          <p className="text-xs text-amber-400 mb-2">
+                            <strong>Missing:</strong> {result.missing_info}
+                          </p>
+                        )}
                         <div className="flex items-center gap-3 text-xs">
                           <span
                             className={
-                              result.found_in_content ? "text-emerald-400" : "text-red-400"
+                              result.answerable && result.answer_quality !== "none" ? "text-emerald-400" : "text-red-400"
                             }
                           >
-                            {result.found_in_content ? "✓ Found in content" : "✗ Not found in content"}
+                            {result.answerable && result.answer_quality !== "none" ? "✓ Answerable" : "✗ Not answerable"}
                           </span>
                           <span className="text-slate-500">•</span>
-                          <span className="text-slate-400">Confidence: {result.confidence}%</span>
+                          <span className={`capitalize ${
+                            result.answer_quality === "complete" ? "text-emerald-400" :
+                            result.answer_quality === "partial" ? "text-amber-400" :
+                            "text-red-400"
+                          }`}>
+                            {result.answer_quality}
+                          </span>
+                          <span className="text-slate-500">•</span>
+                          <span className="text-slate-400">Score: {result.score}/{result.max_score}</span>
                         </div>
                       </div>
                     ))}
