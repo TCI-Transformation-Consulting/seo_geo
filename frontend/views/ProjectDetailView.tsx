@@ -1408,6 +1408,169 @@ export function ProjectDetailView({ project, onBack }: ProjectDetailViewProps) {
         {project.aiAnalysis && (
           <AIAnalysisSection analysis={project.aiAnalysis} />
         )}
+
+        {/* Generate Files Section */}
+        <GenerateFilesSection project={project} />
+      </div>
+    </div>
+  )
+}
+
+// Generate Files Section Component
+const GenerateFilesSection: React.FC<{ project: ClientProject }> = ({ project }) => {
+  const [generatedFiles, setGeneratedFiles] = useState<Record<string, { content: string; loading: boolean; error?: string }>>({})
+  const [expandedFile, setExpandedFile] = useState<string | null>(null)
+
+  const generateFile = async (type: string, generator: () => Promise<any>, extractKey: string) => {
+    setGeneratedFiles(prev => ({ ...prev, [type]: { content: "", loading: true } }))
+    try {
+      const result = await generator()
+      const content = result[extractKey] || result.content || JSON.stringify(result, null, 2)
+      setGeneratedFiles(prev => ({ ...prev, [type]: { content, loading: false } }))
+      setExpandedFile(type)
+    } catch (e: any) {
+      setGeneratedFiles(prev => ({ ...prev, [type]: { content: "", loading: false, error: e.message } }))
+    }
+  }
+
+  const fileTypes = [
+    { 
+      id: "jsonld", 
+      name: "JSON-LD Schema", 
+      description: "Structured data for search engines",
+      icon: FileCode,
+      generate: () => generateJsonLd(project.url),
+      extractKey: "jsonld"
+    },
+    { 
+      id: "localbusiness", 
+      name: "LocalBusiness Schema", 
+      description: "Local business structured data",
+      icon: Building,
+      generate: () => generateLocalBusinessSchema(project.url),
+      extractKey: "schema"
+    },
+    { 
+      id: "robots", 
+      name: "robots.txt", 
+      description: "Crawler directives with AI bot rules",
+      icon: Bot,
+      generate: () => generateRobots(project.url),
+      extractKey: "robots"
+    },
+    { 
+      id: "sitemap", 
+      name: "sitemap.xml", 
+      description: "XML sitemap for search engines",
+      icon: FileJson,
+      generate: () => generateSitemap(project.url),
+      extractKey: "sitemap"
+    },
+    { 
+      id: "llmstxt", 
+      name: "llms.txt", 
+      description: "AI/LLM usage policy file",
+      icon: Bot,
+      generate: () => generateLlmsTxt(project.url),
+      extractKey: "llms_txt"
+    },
+    { 
+      id: "rss", 
+      name: "RSS Feed", 
+      description: "Content syndication feed",
+      icon: Rss,
+      generate: () => generateRSS(project.url),
+      extractKey: "rss"
+    },
+    { 
+      id: "aimanifest", 
+      name: "AI Manifest", 
+      description: "AI capabilities manifest",
+      icon: Sparkles,
+      generate: () => generateAIManifest(project.url),
+      extractKey: "manifest"
+    },
+    { 
+      id: "mcpconfig", 
+      name: "MCP Config", 
+      description: "Model Context Protocol config",
+      icon: Settings,
+      generate: () => generateMcpConfig(project.url),
+      extractKey: "config"
+    },
+    { 
+      id: "openapi", 
+      name: "OpenAPI Spec", 
+      description: "API specification",
+      icon: FileCode,
+      generate: () => generateOpenAPI(project.url),
+      extractKey: "openapi"
+    },
+  ]
+
+  return (
+    <div className="mt-8">
+      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <Sparkles className="w-5 h-5 text-amber-400" />
+        Generate AI-Ready Files
+      </h2>
+      <p className="text-slate-400 text-sm mb-4">
+        One-click generation of structured data and configuration files to improve AI discoverability.
+      </p>
+      
+      <div className="grid md:grid-cols-3 gap-3">
+        {fileTypes.map(ft => {
+          const Icon = ft.icon
+          const file = generatedFiles[ft.id]
+          
+          return (
+            <div key={ft.id} className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Icon className="w-5 h-5 text-indigo-400" />
+                  <span className="font-medium text-white">{ft.name}</span>
+                </div>
+                {file?.content && !file.loading && (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mb-3">{ft.description}</p>
+              
+              {file?.error ? (
+                <div className="text-xs text-red-400 mb-2">{file.error}</div>
+              ) : null}
+              
+              {file?.content && !file.loading ? (
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setExpandedFile(expandedFile === ft.id ? null : ft.id)}
+                    className="text-xs text-indigo-400 hover:text-indigo-300"
+                  >
+                    {expandedFile === ft.id ? "Hide" : "View"} generated file
+                  </button>
+                  {expandedFile === ft.id && (
+                    <CodeBlock value={file.content} filename={ft.name} />
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => generateFile(ft.id, ft.generate, ft.extractKey)}
+                  disabled={file?.loading}
+                  className="w-full py-2 px-3 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded text-sm font-medium transition disabled:opacity-50"
+                >
+                  {file?.loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating...
+                    </span>
+                  ) : (
+                    "Generate"
+                  )}
+                </button>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
