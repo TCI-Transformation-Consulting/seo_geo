@@ -85,8 +85,8 @@
 
 .glass-sidebar {
   background: linear-gradient(180deg, 
-    hsl(220, 25%, 11%) 0%, 
-    hsl(220, 25%, 9%) 100%);
+    rgba(255, 255, 255, 0.04) 0%, 
+    rgba(255, 255, 255, 0.01) 100%);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-right: 1px solid var(--glass-border);
